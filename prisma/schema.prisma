@@ -10,7 +10,234 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id Int @id @default(autoincrement())
-  name String @db.VarChar(100)
+enum RolesEnum {
+  EMPLOYEE
+  DIVISION_MANAGER
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum WorkingStatusEnum {
+  OFFICIAL
+  PROBATIONARY
+  TEMPORARY_LAYOFFS
+}
+
+enum CommonRequestEnum {
+  BEING_LATE
+  LEAVING_EARLY
+  OVER_TIME
+}
+
+enum RequestStatusEnum {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+enum RequestForAbsentTypeEnum {
+  UNPAID_LEAVE
+  PAID_LEAVE
+}
+
+model Position {
+  id          Int         @id @default(autoincrement())
+  name        String      @db.VarChar(20)
+  description String?
+  employees   Employee[]
+  Candidate   Candidate[]
+
+  @@map("position")
+}
+
+model Delivery {
+  id          Int        @id @default(autoincrement())
+  name        String     @db.VarChar(20)
+  description String?
+  employees   Employee[]
+  hasManager  Boolean    @default(false) @map("has_manager")
+
+  @@map("delivery")
+}
+
+model Employee {
+  id                    Int                    @id @default(autoincrement())
+  firstName             String                 @map("first_name") @db.VarChar(20)
+  middleName            String?                @map("middle_name") @db.VarChar(20)
+  lastName              String                 @map("last_name") @db.VarChar(20)
+  phoneNumber           String?                @map("phone_number") @db.VarChar(10)
+  dateOfBirth           DateTime?              @map("date_of_birth")
+  positionId            Int                    @map("position_id")
+  position              Position               @relation(fields: [positionId], references: [id])
+  joinDate              DateTime               @default(now()) @map("join_date")
+  deliveryId            Int                    @map("delivery_id")
+  delivery              Delivery               @relation(fields: [deliveryId], references: [id])
+  location              Json?
+  role                  RolesEnum              @default(EMPLOYEE)
+  paidLeaveCount        Int                    @default(0) @map("paid_leave_count")
+  workingStatus         WorkingStatusEnum      @default(PROBATIONARY) @map("working_status")
+  employeeAccount       EmployeeAccount?
+  devices               Device[]
+  checkInOut            CheckInOut[]
+  requestWorkingRemotes RequestWorkingRemote[]
+  commonRequests        CommonRequest[]
+  requestForAbsents     RequestForAbsent[]
+  educationPrograms     EmployeeEducation[]
+  candidates            Candidate[]
+
+  @@map("employee")
+}
+
+model Candidate {
+  id               Int               @id @default(autoincrement())
+  name             String            @db.VarChar(30)
+  phone            String            @db.VarChar(10)
+  email            String?           @db.VarChar(30)
+  appointmentTime  DateTime          @map("appointment_time")
+  cvLink           String            @map("cv_link")
+  positionId       Int               @map("position_id")
+  position         Position          @relation(fields: [positionId], references: [id])
+  interviewerId    Int
+  interViewer      Employee          @relation(fields: [interviewerId], references: [id])
+  candidateAccount CandidateAccount?
+}
+
+model EmployeeAccount {
+  email      String   @unique
+  password   String
+  employeeId Int      @unique @map("employee_id")
+  employee   Employee @relation(fields: [employeeId], references: [id])
+
+  @@map("employee_account")
+}
+
+model CandidateAccount {
+  candidateId Int       @unique @map("candidate_id")
+  candidate   Candidate @relation(fields: [candidateId], references: [id])
+  username    String
+  password    String
+
+  @@map("candidate_account")
+}
+
+model DeviceType {
+  id          Int      @id @default(autoincrement())
+  name        String   @db.VarChar(30)
+  description String?
+  devices     Device[]
+
+  @@map("device_type")
+}
+
+model DeviceBrand {
+  id          Int      @id @default(autoincrement())
+  name        String   @db.VarChar(30)
+  description String?
+  devices     Device[]
+
+  @@map("device_brand")
+}
+
+model Device {
+  id            Int         @id @default(autoincrement())
+  name          String      @db.VarChar(30)
+  deviceTypeId  Int         @map("device_type_id")
+  deviceType    DeviceType  @relation(fields: [deviceTypeId], references: [id])
+  deviceBrandId Int
+  deviceBrand   DeviceBrand @relation(fields: [deviceBrandId], references: [id])
+  option        Json?
+  description   String?
+  employeeId    Int
+  employee      Employee    @relation(fields: [employeeId], references: [id])
+
+  @@map("device")
+}
+
+model CheckInOut {
+  employeeId Int      @map("employee_id")
+  employee   Employee @relation(fields: [employeeId], references: [id])
+  time       DateTime @default(now())
+  gradient   Int
+
+  @@unique([employeeId, time])
+  @@map("check_in_out")
+}
+
+model CommonRequest {
+  employeeId Int               @map("employee_id")
+  employee   Employee          @relation(fields: [employeeId], references: [id])
+  date       DateTime          @default(now())
+  duration   Int
+  type       CommonRequestEnum @default(BEING_LATE)
+  status     RequestStatusEnum @default(PENDING)
+
+  @@unique([employeeId, date, type])
+  @@map("common_request")
+}
+
+model RequestWorkingRemote {
+  employeeId        Int               @map("employee_id")
+  employee          Employee          @relation(fields: [employeeId], references: [id])
+  date              DateTime          @default(now())
+  isRemoteMorning   Boolean           @default(false) @map("is_remote_morning")
+  isRemoteAfternoon Boolean           @default(false) @map("is_remote_afternoon")
+  status            RequestStatusEnum @default(PENDING)
+
+  @@unique([employeeId, date])
+  @@map("request_working_remote")
+}
+
+model RequestForAbsent {
+  employeeId Int                      @map("employee_id")
+  employee   Employee                 @relation(fields: [employeeId], references: [id])
+  date       DateTime                 @default(now())
+  type       RequestForAbsentTypeEnum @default(UNPAID_LEAVE)
+  status     RequestStatusEnum        @default(PENDING)
+
+  @@unique([employeeId, date])
+  @@map("request_for_absent")
+}
+
+model Tag {
+  id                Int                @id @default(autoincrement())
+  name              String             @db.VarChar(20)
+  recruimentNews    RecruimentNews[]
+  educationPrograms EducationProgram[]
+
+  @@map("tag")
+}
+
+model RecruimentNews {
+  id          Int     @id @default(autoincrement())
+  title       String
+  contentJson Json?   @map("content_json")
+  contentHTML String? @map("content_html")
+  tags        Tag[]
+
+  @@map("recruiment_news")
+}
+
+model EducationProgram {
+  id          Int                 @id @default(autoincrement())
+  title       String
+  description String?
+  tags        Tag[]
+  maxSlot     Int?                @map("max_slot") @db.SmallInt
+  time        DateTime?
+  averageRate Int                 @default(0) @map("average_rate")
+  employees   EmployeeEducation[]
+
+  @@map("educatipn_program")
+}
+
+model EmployeeEducation {
+  employeeId Int              @map("employee_id")
+  employee   Employee         @relation(fields: [employeeId], references: [id])
+  programId  Int              @map("program_id")
+  program    EducationProgram @relation(fields: [programId], references: [id])
+  isTutor    Boolean          @default(false)
+  rate       Int?
+
+  @@unique([employeeId, programId])
+  @@map("employee_education")
 }
