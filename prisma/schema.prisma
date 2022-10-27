@@ -45,17 +45,20 @@ model Position {
   name        String      @db.VarChar(20)
   description String?
   employees   Employee[]
-  Candidate   Candidate[]
+  candidates  Candidate[]
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @default(now()) @updatedAt
 
   @@map("position")
 }
 
 model Delivery {
-  id          Int        @id @default(autoincrement())
-  name        String     @db.VarChar(20)
-  description String?
-  employees   Employee[]
-  hasManager  Boolean    @default(false) @map("has_manager")
+  id               Int                @id @default(autoincrement())
+  name             String             @db.VarChar(20)
+  description      String?
+  deliveryEmployee DeliveryEmployee[]
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @default(now()) @updatedAt
 
   @@map("delivery")
 }
@@ -70,12 +73,12 @@ model Employee {
   positionId            Int                    @map("position_id")
   position              Position               @relation(fields: [positionId], references: [id])
   joinDate              DateTime               @default(now()) @map("join_date")
-  deliveryId            Int                    @map("delivery_id")
-  delivery              Delivery               @relation(fields: [deliveryId], references: [id])
   location              Json?
   role                  RolesEnum              @default(EMPLOYEE)
   paidLeaveCount        Int                    @default(0) @map("paid_leave_count")
   workingStatus         WorkingStatusEnum      @default(PROBATIONARY) @map("working_status")
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @default(now()) @updatedAt
   employeeAccount       EmployeeAccount?
   devices               Device[]
   checkInOut            CheckInOut[]
@@ -84,8 +87,20 @@ model Employee {
   requestForAbsents     RequestForAbsent[]
   educationPrograms     EmployeeEducation[]
   candidates            Candidate[]
+  deliveryEmployee      DeliveryEmployee?
 
   @@map("employee")
+}
+
+model DeliveryEmployee {
+  deliveryId Int      @map("delivery_id")
+  delivery   Delivery @relation(fields: [deliveryId], references: [id])
+  employeeId Int      @unique @map("employee_id")
+  employee   Employee @relation(fields: [employeeId], references: [id])
+  isManager  Boolean  @default(false) @map("is_manager")
+  createdAt  DateTime @default(now())
+
+  @@map("delivery_employee")
 }
 
 model Candidate {
@@ -93,13 +108,18 @@ model Candidate {
   name             String            @db.VarChar(30)
   phone            String            @db.VarChar(10)
   email            String?           @db.VarChar(30)
-  appointmentTime  DateTime          @map("appointment_time")
+  appointmentTime  DateTime?         @map("appointment_time")
   cvLink           String            @map("cv_link")
+  testLink         String?           @map("test_link")
   positionId       Int               @map("position_id")
   position         Position          @relation(fields: [positionId], references: [id])
-  interviewerId    Int
-  interViewer      Employee          @relation(fields: [interviewerId], references: [id])
+  interviewerId    Int?              @map("interviewer_id")
+  interViewer      Employee?         @relation(fields: [interviewerId], references: [id])
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @default(now()) @updatedAt
   candidateAccount CandidateAccount?
+
+  @@map("candidate")
 }
 
 model EmployeeAccount {
@@ -107,6 +127,8 @@ model EmployeeAccount {
   password   String
   employeeId Int      @unique @map("employee_id")
   employee   Employee @relation(fields: [employeeId], references: [id])
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @default(now()) @updatedAt
 
   @@map("employee_account")
 }
@@ -114,8 +136,10 @@ model EmployeeAccount {
 model CandidateAccount {
   candidateId Int       @unique @map("candidate_id")
   candidate   Candidate @relation(fields: [candidateId], references: [id])
-  username    String
+  username    String    @unique
   password    String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @default(now()) @updatedAt
 
   @@map("candidate_account")
 }
@@ -124,6 +148,8 @@ model DeviceType {
   id          Int      @id @default(autoincrement())
   name        String   @db.VarChar(30)
   description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
   devices     Device[]
 
   @@map("device_type")
@@ -133,6 +159,8 @@ model DeviceBrand {
   id          Int      @id @default(autoincrement())
   name        String   @db.VarChar(30)
   description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
   devices     Device[]
 
   @@map("device_brand")
@@ -149,6 +177,8 @@ model Device {
   description   String?
   employeeId    Int
   employee      Employee    @relation(fields: [employeeId], references: [id])
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @default(now()) @updatedAt
 
   @@map("device")
 }
@@ -158,6 +188,7 @@ model CheckInOut {
   employee   Employee @relation(fields: [employeeId], references: [id])
   time       DateTime @default(now())
   gradient   Int
+  createdAt  DateTime @default(now())
 
   @@unique([employeeId, time])
   @@map("check_in_out")
@@ -170,6 +201,7 @@ model CommonRequest {
   duration   Int
   type       CommonRequestEnum @default(BEING_LATE)
   status     RequestStatusEnum @default(PENDING)
+  createdAt  DateTime          @default(now())
 
   @@unique([employeeId, date, type])
   @@map("common_request")
@@ -182,6 +214,7 @@ model RequestWorkingRemote {
   isRemoteMorning   Boolean           @default(false) @map("is_remote_morning")
   isRemoteAfternoon Boolean           @default(false) @map("is_remote_afternoon")
   status            RequestStatusEnum @default(PENDING)
+  createdAt         DateTime          @default(now())
 
   @@unique([employeeId, date])
   @@map("request_working_remote")
@@ -193,6 +226,7 @@ model RequestForAbsent {
   date       DateTime                 @default(now())
   type       RequestForAbsentTypeEnum @default(UNPAID_LEAVE)
   status     RequestStatusEnum        @default(PENDING)
+  createdAt  DateTime                 @default(now())
 
   @@unique([employeeId, date])
   @@map("request_for_absent")
@@ -203,16 +237,20 @@ model Tag {
   name              String             @db.VarChar(20)
   recruimentNews    RecruimentNews[]
   educationPrograms EducationProgram[]
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @default(now()) @updatedAt
 
   @@map("tag")
 }
 
 model RecruimentNews {
-  id          Int     @id @default(autoincrement())
+  id          Int      @id @default(autoincrement())
   title       String
-  contentJson Json?   @map("content_json")
-  contentHTML String? @map("content_html")
+  contentJson Json?    @map("content_json")
+  contentHTML String?  @map("content_html")
   tags        Tag[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
 
   @@map("recruiment_news")
 }
@@ -226,6 +264,8 @@ model EducationProgram {
   time        DateTime?
   averageRate Int                 @default(0) @map("average_rate")
   employees   EmployeeEducation[]
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @default(now()) @updatedAt
 
   @@map("educatipn_program")
 }
@@ -237,6 +277,7 @@ model EmployeeEducation {
   program    EducationProgram @relation(fields: [programId], references: [id])
   isTutor    Boolean          @default(false)
   rate       Int?
+  createdAt  DateTime         @default(now())
 
   @@unique([employeeId, programId])
   @@map("employee_education")
