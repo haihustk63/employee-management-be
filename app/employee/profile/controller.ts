@@ -143,7 +143,6 @@ const updateEmployeeProfile = async (req: Request, res: Response) => {
       if (findRecordWithManagerId) {
         // Case move the employee to another delivery
         if (deliveryId !== findRecordWithManagerId.deliveryId) {
-          // And assign role manager
           if (isManager) {
             // So first of all, update all roles of "another delivery" => not manager
             await prisma.deliveryEmployee.updateMany({
@@ -180,25 +179,53 @@ const updateEmployeeProfile = async (req: Request, res: Response) => {
           }
         } else {
           // Still be in the same delivery
-          // So if user assigns another role => change it
           if (findRecordWithManagerId.isManager !== isManager) {
-            await prisma.deliveryEmployee.update({
-              where: {
-                employeeId: Number(employeeId),
-              },
-              data: {
-                isManager,
-              },
-            });
+            if (isManager) {
+              await prisma.deliveryEmployee.updateMany({
+                where: {
+                  deliveryId,
+                },
+                data: {
+                  isManager: false,
+                },
+              });
+              await prisma.deliveryEmployee.update({
+                where: {
+                  employeeId: Number(employeeId),
+                },
+                data: {
+                  isManager: true,
+                },
+              });
+            } else {
+              await prisma.deliveryEmployee.update({
+                where: {
+                  employeeId: Number(employeeId),
+                },
+                data: {
+                  isManager: false,
+                },
+              });
+            }
           }
         }
       } else {
         // If not find any records with "employeeId" => create new
+        if (isManager) {
+          await prisma.deliveryEmployee.updateMany({
+            where: {
+              deliveryId,
+            },
+            data: {
+              isManager: false,
+            },
+          });
+        }
         await prisma.deliveryEmployee.create({
           data: {
             employeeId: Number(employeeId),
             deliveryId,
-            isManager,
+            isManager: false,
           },
         });
       }
