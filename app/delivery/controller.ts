@@ -78,7 +78,18 @@ const updateDelivery = async (req: Request, res: Response) => {
           });
         }
       } else {
-        // If not found, create new record
+        // If not found
+        // Change the current manager of that delivery -> not manager
+        await prisma.deliveryEmployee.updateMany({
+          where: {
+            deliveryId: Number(deliveryId),
+            isManager: true,
+          },
+          data: {
+            isManager: false,
+          },
+        });
+        // Create new record
         await prisma.deliveryEmployee.create({
           data: {
             employeeId: managerId,

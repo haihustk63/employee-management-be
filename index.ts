@@ -5,6 +5,7 @@ import {
   candidateApplyRouter,
   candidateAccountRouter,
   employeeProfileRouter,
+  employeeAccountRouter,
   deliveryRouter,
   positionRouter,
 } from "@app/index";
@@ -17,6 +18,7 @@ app.use([
   candidateApplyRouter,
   candidateAccountRouter,
   employeeProfileRouter,
+  employeeAccountRouter,
   deliveryRouter,
   positionRouter,
 ]);
