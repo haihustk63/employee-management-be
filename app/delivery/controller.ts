@@ -110,9 +110,23 @@ const getAllDeliveries = async (req: Request, res: Response) => {
   try {
     const allDeliveries = await prisma.delivery.findMany({
       include: {
-        deliveryEmployee: true,
+        deliveryEmployee: {
+          where: {
+            isManager: true,
+          },
+          include: {
+            employee: {
+              select: {
+                firstName: true,
+                middleName: true,
+                lastName: true,
+              },
+            },
+          },
+        },
       },
     });
+
     return res.status(200).send({ allDeliveries });
   } catch (error: any) {
     return res.sendStatus(400);

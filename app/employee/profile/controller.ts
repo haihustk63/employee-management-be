@@ -1,11 +1,68 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, RolesEnum, WorkingStatusEnum } from "@prisma/client";
 import { Response, Request } from "express";
 
 const prisma = new PrismaClient();
 
 const getAllEmployeeProfile = async (req: Request, res: Response) => {
+  let { delivery, keyword, position, role, workingStatus, joinDate } =
+    req.query;
+
+  const query: any = {
+    deliveryEmployee: {
+      deliveryId: Number(delivery),
+    },
+    OR: [
+      {
+        lastName: {
+          contains: keyword as string,
+        },
+      },
+      {
+        middleName: {
+          contains: keyword as string,
+        },
+      },
+      {
+        firstName: {
+          contains: keyword as string,
+        },
+      },
+      {
+        phoneNumber: {
+          contains: keyword as string,
+        },
+      },
+    ],
+    positionId: {
+      equals: Number(position),
+    },
+    role: {
+      equals: role as RolesEnum,
+    },
+    workingStatus: {
+      equals: workingStatus as WorkingStatusEnum,
+    },
+  };
+
+  if (!delivery) {
+    delete query.deliveryEmployee;
+  }
+  if (!keyword) {
+    delete query.OR;
+  }
+  if (!position) {
+    delete query.positionId;
+  }
+  if (!role) {
+    delete query.role;
+  }
+  if (!workingStatus) {
+    delete query.workingStatus;
+  }
+
   try {
     const allEmployeeProfile = await prisma.employee.findMany({
+      where: query,
       include: {
         deliveryEmployee: {
           select: {
@@ -18,6 +75,7 @@ const getAllEmployeeProfile = async (req: Request, res: Response) => {
             },
           },
         },
+        position: true,
       },
     });
     return res.status(200).send({ allEmployeeProfile });

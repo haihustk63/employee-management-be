@@ -15,7 +15,12 @@ const createNewApplication = async (req: Request, res: Response) => {
 
 const getAllApplications = async (req: Request, res: Response) => {
   try {
-    const allApplications = await prisma.candidate.findMany();
+    const allApplications = await prisma.candidate.findMany({
+      include: {
+        position: true,
+        interViewer: true,
+      },
+    });
     return res.status(200).send({ allApplications });
   } catch (error: any) {
     return res.status(400).send({ error });

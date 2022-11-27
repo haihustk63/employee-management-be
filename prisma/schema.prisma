@@ -106,8 +106,8 @@ model DeliveryEmployee {
 model Candidate {
   id               Int               @id @default(autoincrement())
   name             String            @db.VarChar(30)
-  phone            String            @db.VarChar(10)
-  email            String?           @db.VarChar(30)
+  phone            String?           @db.VarChar(10)
+  email            String            @db.VarChar(30)
   appointmentTime  DateTime?         @map("appointment_time")
   cvLink           String            @map("cv_link")
   testLink         String?           @map("test_link")
@@ -244,13 +244,12 @@ model Tag {
 }
 
 model RecruimentNews {
-  id          Int      @id @default(autoincrement())
-  title       String
-  contentJson Json?    @map("content_json")
-  contentHTML String?  @map("content_html")
-  tags        Tag[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @default(now()) @updatedAt
+  id        Int      @id @default(autoincrement())
+  title     String
+  content   String?
+  tags      Tag[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
 
   @@map("recruiment_news")
 }
@@ -258,7 +257,7 @@ model RecruimentNews {
 model EducationProgram {
   id          Int                 @id @default(autoincrement())
   title       String
-  description String?
+  content     String?
   tags        Tag[]
   maxSlot     Int?                @map("max_slot") @db.SmallInt
   time        DateTime?
