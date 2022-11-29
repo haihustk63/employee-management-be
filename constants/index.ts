@@ -8,6 +8,10 @@ export const BASE_URLS = {
   POSITION: "/positions",
 
   DELIVERY: "/deliveries",
+
+  TEST_QUESTION: "/test-questions",
+
+  TEST_TOPIC: "/test-topics",
 };
 
 export const ROUTES = {
@@ -23,9 +27,15 @@ export const ROUTES = {
 
   POSITION: BASE_URLS.POSITION,
   POSITION_MODIFY: `${BASE_URLS.POSITION}/:positionId`,
-  
+
   DELIVERY: BASE_URLS.DELIVERY,
   DELIVERY_MODIFY: `${BASE_URLS.DELIVERY}/:deliveryId`,
+
+  TEST_QUESTION: BASE_URLS.TEST_QUESTION,
+  TEST_QUESTION_MODIFY: `${BASE_URLS.TEST_QUESTION}/:questionId`,
+
+  TEST_TOPICS: BASE_URLS.TEST_TOPIC,
+  TEST_TOPICS_MODIFY: `${BASE_URLS.TEST_TOPIC}/:topicId`,
 };
 
 export const PASSWORD_SALT_ROUNDS = 10;

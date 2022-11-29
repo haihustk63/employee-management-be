@@ -1,5 +1,5 @@
 import express, { Express } from "express";
-import cors from "cors"
+import cors from "cors";
 
 import { appPort } from "./config";
 import {
@@ -9,6 +9,8 @@ import {
   employeeAccountRouter,
   deliveryRouter,
   positionRouter,
+  testTopicRouter,
+  testQuestionRouter,
 } from "@app/index";
 
 const app: Express = express();
@@ -23,6 +25,8 @@ app.use([
   employeeAccountRouter,
   deliveryRouter,
   positionRouter,
+  testTopicRouter,
+  testQuestionRouter,
 ]);
 
 app.listen(appPort, () => {

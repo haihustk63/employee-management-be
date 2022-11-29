@@ -40,6 +40,18 @@ enum RequestForAbsentTypeEnum {
   PAID_LEAVE
 }
 
+enum TestQuestionTypeEnum {
+  ONE_CHOICE
+  MULTIPLE_CHOICE
+  ESSAYS
+}
+
+enum TestQuestionLevelEnum {
+  EASY
+  MEDIUM
+  HARD
+}
+
 model Position {
   id          Int         @id @default(autoincrement())
   name        String      @db.VarChar(20)
@@ -280,4 +292,23 @@ model EmployeeEducation {
 
   @@unique([employeeId, programId])
   @@map("employee_education")
+}
+
+model TestTopic {
+  id           Int            @id @default(autoincrement())
+  name         String         @db.VarChar(30)
+  description  String?
+  TestQuestion TestQuestion[]
+}
+
+model TestQuestion {
+  id             Int                   @id @default(autoincrement())
+  questionText   String                @map("question-text")
+  questionSource Json?                 @map("question-source")
+  type           TestQuestionTypeEnum  @default(ONE_CHOICE)
+  level          TestQuestionLevelEnum @default(EASY)
+  options        Json?
+  answer         String?
+  topic          TestTopic             @relation(fields: [topicId], references: [id])
+  topicId        Int
 }
