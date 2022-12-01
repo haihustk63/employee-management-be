@@ -12,6 +12,9 @@ export const BASE_URLS = {
   TEST_QUESTION: "/test-questions",
 
   TEST_TOPIC: "/test-topics",
+
+  //constant
+  CONSTANT: "/constants",
 };
 
 export const ROUTES = {
@@ -36,6 +39,9 @@ export const ROUTES = {
 
   TEST_TOPICS: BASE_URLS.TEST_TOPIC,
   TEST_TOPICS_MODIFY: `${BASE_URLS.TEST_TOPIC}/:topicId`,
+
+  // constants
+  TEST_QUESTION_CONSTANTS: `${BASE_URLS.CONSTANT}/test-questions`,
 };
 
 export const PASSWORD_SALT_ROUNDS = 10;

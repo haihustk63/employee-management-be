@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
-import { PrismaClient, Prisma } from "@prisma/client";
+import { PrismaClient } from "@prisma/client";
 
-import { TestQuestionLevel, TestQuestionType } from "@constants/type";
+import { TEST_QUESTION_LEVEL, TEST_QUESTION_TYPE } from "@constants/type";
 
 const prisma = new PrismaClient();
 
@@ -10,8 +10,8 @@ const createNewTestQuestion = async (req: Request, res: Response) => {
     const { data } = req.body;
     const transformData = {
       ...data,
-      type: TestQuestionType[data.type],
-      level: TestQuestionLevel[data.level],
+      type: TEST_QUESTION_TYPE[data.type],
+      level: TEST_QUESTION_LEVEL[data.level],
     };
 
     const newTestQuestion = await prisma.testQuestion.create({
@@ -20,6 +20,7 @@ const createNewTestQuestion = async (req: Request, res: Response) => {
 
     return res.status(200).send({ newTestQuestion });
   } catch (error: any) {
+    console.log(error);
     return res.sendStatus(400);
   }
 };
@@ -28,11 +29,20 @@ const updateTestQuestion = async (req: Request, res: Response) => {
   try {
     const { data } = req.body;
     const { questionId } = req.params;
+
+    const transformData = {
+      ...data,
+      type: TEST_QUESTION_TYPE[data.type],
+      level: TEST_QUESTION_LEVEL[data.level],
+    };
+
+    console.log(transformData)
+
     const updatedTestQuestion = await prisma.testQuestion.update({
       where: {
         id: Number(questionId),
       },
-      data,
+      data: transformData,
     });
     return res.status(200).send({ updatedTestQuestion });
   } catch (error: any) {
@@ -64,11 +74,17 @@ const getAllTestQuestions = async (req: Request, res: Response) => {
       where: {
         topicId: topicId ? Number(topicId) : undefined,
       },
+      include: {
+        topic: {
+          select: {
+            name: true,
+          },
+        },
+      },
     });
 
     return res.status(200).send({ allTestQuestions });
   } catch (error: any) {
-    console.log(error);
     return res.sendStatus(400);
   }
 };

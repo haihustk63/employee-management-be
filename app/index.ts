@@ -11,3 +11,5 @@ export { default as positionRouter } from "./position/route";
 export { default as testTopicRouter } from "./test-topic/route";
 
 export { default as testQuestionRouter } from "./test-question/route";
+
+export { default as constantRouter } from "./constant/route";

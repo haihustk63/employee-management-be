@@ -7,7 +7,7 @@ import {
   createNewTestQuestion,
 } from "./controller";
 
-const { TEST_QUESTION, TEST_QUESTION_MODIFY } = ROUTES;
+const { TEST_QUESTION, TEST_QUESTION_MODIFY, TEST_QUESTION_CONSTANTS } = ROUTES;
 
 const router = Router();
 

@@ -11,6 +11,7 @@ import {
   positionRouter,
   testTopicRouter,
   testQuestionRouter,
+  constantRouter,
 } from "@app/index";
 
 const app: Express = express();
@@ -27,6 +28,7 @@ app.use([
   positionRouter,
   testTopicRouter,
   testQuestionRouter,
+  constantRouter,
 ]);
 
 app.listen(appPort, () => {
