@@ -15,4 +15,5 @@ router.post(CANDIDATE_ACCOUNT, createNewAccount);
 //delete an account
 router.delete(CANDIDATE_ACCOUNT_MODIFY, deleteAccount);
 
+
 export default router;

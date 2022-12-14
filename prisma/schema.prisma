@@ -106,7 +106,7 @@ model Employee {
 
 model DeliveryEmployee {
   deliveryId Int      @map("delivery_id")
-  delivery   Delivery @relation(fields: [deliveryId], references: [id])
+  delivery   Delivery @relation(fields: [deliveryId], references: [id], onDelete: Cascade)
   employeeId Int      @unique @map("employee_id")
   employee   Employee @relation(fields: [employeeId], references: [id])
   isManager  Boolean  @default(false) @map("is_manager")
@@ -295,10 +295,10 @@ model EmployeeEducation {
 }
 
 model TestTopic {
-  id           Int            @id @default(autoincrement())
-  name         String         @db.VarChar(30)
-  description  String?
-  TestQuestion TestQuestion[]
+  id                Int            @id @default(autoincrement())
+  name              String         @db.VarChar(30)
+  description       String?
+  testTopicQuestion TestQuestion[]
 }
 
 model TestQuestion {
@@ -308,7 +308,7 @@ model TestQuestion {
   type           TestQuestionTypeEnum  @default(ONE_CHOICE)
   level          TestQuestionLevelEnum @default(EASY)
   options        Json?
-  answer         String?
-  topic          TestTopic             @relation(fields: [topicId], references: [id])
+  answer         Json?
   topicId        Int
+  topic          TestTopic             @relation(references: [id], fields: [topicId])
 }

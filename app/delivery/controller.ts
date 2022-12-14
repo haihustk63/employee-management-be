@@ -133,4 +133,20 @@ const getAllDeliveries = async (req: Request, res: Response) => {
   }
 };
 
-export { createNewDelivery, getAllDeliveries, updateDelivery };
+const deleteDelivery = async (req: Request, res: Response) => {
+  try {
+    const { deliveryId } = req.params;
+
+    await prisma.delivery.delete({
+      where: {
+        id: Number(deliveryId),
+      },
+    });
+
+    return res.sendStatus(200);
+  } catch (error: any) {
+    return res.status(400).send(error.message);
+  }
+};
+
+export { createNewDelivery, getAllDeliveries, updateDelivery, deleteDelivery };

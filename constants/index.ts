@@ -3,6 +3,7 @@ export const BASE_URLS = {
   CANDIDATE_ACCOUNT: "/candidates/accounts",
 
   EMPLOYEE_PROFILE: "/employees/profile",
+  EMPLOYEE_PROFILE_GROUP: "/group/employees/file",
   EMPLOYEE_ACCOUNT: "/employees/accounts",
 
   POSITION: "/positions",
@@ -12,9 +13,19 @@ export const BASE_URLS = {
   TEST_QUESTION: "/test-questions",
 
   TEST_TOPIC: "/test-topics",
+  TEST_QUESTION_CLASSIFIED: "/classified/test-questions",
+
+  //login
+  LOGIN_CANDIDATE: "/login/candidate",
+  LOGOUT_CANDIDATE: "/logout/candidate",
+  LOGIN_EMPLOYEE: "/login/employee",
+  LOGOUT_EMPLOYEE: "/logout/employee",
 
   //constant
   CONSTANT: "/constants",
+
+  // tests
+  CREATE_TEST: "/tests/create",
 };
 
 export const ROUTES = {
@@ -23,7 +34,7 @@ export const ROUTES = {
   CANDIDATE_ACCOUNT_MODIFY: `${BASE_URLS.CANDIDATE_ACCOUNT}/:username`,
 
   EMPLOYEE_PROFILE: BASE_URLS.EMPLOYEE_PROFILE,
-  EMPLOYEE_PROFILE_GROUP: `${BASE_URLS.EMPLOYEE_PROFILE}/group`,
+  EMPLOYEE_PROFILE_GROUP: BASE_URLS.EMPLOYEE_PROFILE_GROUP,
   EMPLOYEE_PROFILE_MODIFY: `${BASE_URLS.EMPLOYEE_PROFILE}/:employeeId`,
   EMPLOYEE_ACCOUNT: BASE_URLS.EMPLOYEE_ACCOUNT,
   EMPLOYEE_ACCOUNT_MODIFY: `${BASE_URLS.EMPLOYEE_ACCOUNT}/:employeeId`,
@@ -35,13 +46,52 @@ export const ROUTES = {
   DELIVERY_MODIFY: `${BASE_URLS.DELIVERY}/:deliveryId`,
 
   TEST_QUESTION: BASE_URLS.TEST_QUESTION,
+  TEST_QUESTION_CLASSIFIED: BASE_URLS.TEST_QUESTION_CLASSIFIED,
   TEST_QUESTION_MODIFY: `${BASE_URLS.TEST_QUESTION}/:questionId`,
 
   TEST_TOPICS: BASE_URLS.TEST_TOPIC,
   TEST_TOPICS_MODIFY: `${BASE_URLS.TEST_TOPIC}/:topicId`,
 
+  LOGIN_CANDIDATE: BASE_URLS.LOGIN_CANDIDATE,
+  LOGOUT_CANDIDATE: BASE_URLS.LOGOUT_CANDIDATE,
+  LOGIN_EMPLOYEE: BASE_URLS.LOGIN_EMPLOYEE,
+  LOGOUT_EMPLOYEE: BASE_URLS.LOGOUT_EMPLOYEE,
+
   // constants
   TEST_QUESTION_CONSTANTS: `${BASE_URLS.CONSTANT}/test-questions`,
+
+  // tests
+  CREATE_TEST: `${BASE_URLS.CREATE_TEST}`,
 };
 
 export const PASSWORD_SALT_ROUNDS = 10;
+
+export const GUEST = {
+  [ROUTES.CANDIDATE_APPLY]: ["POST"],
+};
+
+export const CANDIDATE = {
+  [ROUTES.LOGOUT_CANDIDATE]: ["POST"],
+};
+
+export const EMPLOYEE = {
+  [ROUTES.EMPLOYEE_PROFILE_MODIFY]: ["GET"],
+  [ROUTES.EMPLOYEE_ACCOUNT_MODIFY]: ["PATCH"],
+
+  [ROUTES.LOGOUT_EMPLOYEE]: ["POST"],
+};
+
+export const DIVISION_MANAGER = {
+  ...EMPLOYEE,
+};
+
+export const PERMISSION: { [key: string]: { [key: string]: string[] } } = {
+  CANDIDATE,
+  EMPLOYEE,
+  DIVISION_MANAGER,
+};
+
+export const NOT_NEED_AUTH_PATH = [
+  ROUTES.LOGIN_CANDIDATE,
+  ROUTES.LOGIN_EMPLOYEE,
+];

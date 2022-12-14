@@ -1,21 +1,18 @@
 import { Request, Response } from "express";
 import { PrismaClient } from "@prisma/client";
 
-import { TEST_QUESTION_LEVEL, TEST_QUESTION_TYPE } from "@constants/type";
-
 const prisma = new PrismaClient();
 
 const createNewTestQuestion = async (req: Request, res: Response) => {
   try {
     const { data } = req.body;
-    const transformData = {
-      ...data,
-      type: TEST_QUESTION_TYPE[data.type],
-      level: TEST_QUESTION_LEVEL[data.level],
-    };
+    const { topic: topicId, ...restData } = data;
 
     const newTestQuestion = await prisma.testQuestion.create({
-      data: transformData,
+      data: {
+        ...restData,
+        topicId: Number(topicId),
+      },
     });
 
     return res.status(200).send({ newTestQuestion });
@@ -30,19 +27,11 @@ const updateTestQuestion = async (req: Request, res: Response) => {
     const { data } = req.body;
     const { questionId } = req.params;
 
-    const transformData = {
-      ...data,
-      type: TEST_QUESTION_TYPE[data.type],
-      level: TEST_QUESTION_LEVEL[data.level],
-    };
-
-    console.log(transformData)
-
     const updatedTestQuestion = await prisma.testQuestion.update({
       where: {
         id: Number(questionId),
       },
-      data: transformData,
+      data,
     });
     return res.status(200).send({ updatedTestQuestion });
   } catch (error: any) {
@@ -68,18 +57,33 @@ const deleteTestQuestion = async (req: Request, res: Response) => {
 
 const getAllTestQuestions = async (req: Request, res: Response) => {
   try {
-    const { topicId } = req.query;
+    const { keyword = "", topic, level, type } = req.query;
 
     const allTestQuestions = await prisma.testQuestion.findMany({
       where: {
-        topicId: topicId ? Number(topicId) : undefined,
+        AND: [
+          {
+            AND: [
+              {
+                type: type as any,
+              },
+              {
+                level: level as any,
+              },
+              {
+                questionText: {
+                  contains: keyword as string,
+                },
+              },
+            ],
+          },
+          {
+            topicId: topic ? Number(topic) : undefined,
+          },
+        ],
       },
       include: {
-        topic: {
-          select: {
-            name: true,
-          },
-        },
+        topic: true,
       },
     });
 
@@ -89,9 +93,46 @@ const getAllTestQuestions = async (req: Request, res: Response) => {
   }
 };
 
+const getOneTestQuestion = async (req: Request, res: Response) => {
+  try {
+    const { questionId } = req.params;
+
+    const testQuestion = await prisma.testQuestion.findUnique({
+      where: {
+        id: Number(questionId),
+      },
+      include: {
+        topic: true,
+      },
+    });
+
+    return res.status(200).send(testQuestion);
+  } catch (error: any) {
+    return res.sendStatus(400);
+  }
+};
+
+const classifiedQuestion = async (req: Request, res: Response) => {
+  try {
+    const allTestQuestions = await prisma.testQuestion.groupBy({
+      by: ["topicId", "level"],
+      _count: {
+        _all: true,
+      },
+    });
+    console.log(allTestQuestions);
+    return res.status(200).send(allTestQuestions);
+  } catch (error: any) {
+    console.log(error.message);
+    return res.sendStatus(400);
+  }
+};
+
 export {
   createNewTestQuestion,
   getAllTestQuestions,
+  getOneTestQuestion,
   updateTestQuestion,
   deleteTestQuestion,
+  classifiedQuestion,
 };
