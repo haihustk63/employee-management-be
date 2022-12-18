@@ -56,10 +56,11 @@ model Position {
   id          Int         @id @default(autoincrement())
   name        String      @db.VarChar(20)
   description String?
-  employees   Employee[]
-  candidates  Candidate[]
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @default(now()) @updatedAt
+  employees   Employee[]
+  candidates  Candidate[]
+  jobs        Jobs[]
 
   @@map("position")
 }
@@ -122,7 +123,6 @@ model Candidate {
   email            String            @db.VarChar(30)
   appointmentTime  DateTime?         @map("appointment_time")
   cvLink           String            @map("cv_link")
-  testLink         String?           @map("test_link")
   positionId       Int               @map("position_id")
   position         Position          @relation(fields: [positionId], references: [id])
   interviewerId    Int?              @map("interviewer_id")
@@ -130,6 +130,7 @@ model Candidate {
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @default(now()) @updatedAt
   candidateAccount CandidateAccount?
+  skillTest        SkillTest?
 
   @@map("candidate")
 }
@@ -138,7 +139,7 @@ model EmployeeAccount {
   email      String   @unique
   password   String
   employeeId Int      @unique @map("employee_id")
-  employee   Employee @relation(fields: [employeeId], references: [id])
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @default(now()) @updatedAt
 
@@ -147,7 +148,7 @@ model EmployeeAccount {
 
 model CandidateAccount {
   candidateId Int       @unique @map("candidate_id")
-  candidate   Candidate @relation(fields: [candidateId], references: [id])
+  candidate   Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
   username    String    @unique
   password    String
   createdAt   DateTime  @default(now())
@@ -195,11 +196,12 @@ model Device {
   @@map("device")
 }
 
+// 0 - check in, 1- check out
 model CheckInOut {
   employeeId Int      @map("employee_id")
   employee   Employee @relation(fields: [employeeId], references: [id])
   time       DateTime @default(now())
-  gradient   Int
+  type       Int      @default(0)
   createdAt  DateTime @default(now())
 
   @@unique([employeeId, time])
@@ -302,13 +304,43 @@ model TestTopic {
 }
 
 model TestQuestion {
-  id             Int                   @id @default(autoincrement())
-  questionText   String                @map("question-text")
-  questionSource Json?                 @map("question-source")
-  type           TestQuestionTypeEnum  @default(ONE_CHOICE)
-  level          TestQuestionLevelEnum @default(EASY)
-  options        Json?
-  answer         Json?
-  topicId        Int
-  topic          TestTopic             @relation(references: [id], fields: [topicId])
+  id                Int                   @id @default(autoincrement())
+  questionText      String                @map("question-text")
+  questionSource    Json?                 @map("question-source")
+  type              TestQuestionTypeEnum  @default(ONE_CHOICE)
+  level             TestQuestionLevelEnum @default(EASY)
+  options           Json?
+  answer            Json?
+  topicId           Int
+  topic             TestTopic             @relation(references: [id], fields: [topicId])
+  testQuestionTests TestQuestionTests[]
+}
+
+model SkillTest {
+  id                Int                 @id @default(autoincrement())
+  candidateId       Int?                @unique @map("candidate_id")
+  candidate         Candidate?          @relation(references: [id], fields: [candidateId])
+  score             Decimal?
+  testQuestionTests TestQuestionTests[]
+}
+
+model TestQuestionTests {
+  questionId Int          @map("question_id")
+  question   TestQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  testId     Int          @map("test_id")
+  test       SkillTest    @relation(references: [id], fields: [testId])
+  answer     Json?
+
+  @@unique([questionId, testId])
+}
+
+model Jobs {
+  id         Int       @id @default(autoincrement())
+  title      String
+  typeOfJob  Int       @map("type_of_job")
+  upTo       Int?      @map("up_to")
+  level      Json?
+  jobDetail  String?   @map("job_detail")
+  positionId Int?      @map("position_id")
+  position   Position? @relation(fields: [positionId], references: [id])
 }

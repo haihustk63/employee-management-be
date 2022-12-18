@@ -15,6 +15,7 @@ import {
   constantRouter,
   loginRouter,
   testsRouter,
+  checkInOutRouter,
 } from "@app/index";
 import { authMiddleware } from "./middleware";
 
@@ -22,7 +23,7 @@ const app: Express = express();
 
 const corsOption = {
   optionsSuccessStatus: 200,
-  origin: "http://127.0.0.1:5173",
+  origin: ["http://localhost:5173", "http://127.0.0.1:5173"],
   credentials: true,
 };
 
@@ -48,6 +49,7 @@ app.use([
   constantRouter,
   loginRouter,
   testsRouter,
+  checkInOutRouter,
 ]);
 
 app.listen(appPort, () => {

@@ -17,15 +17,17 @@ export const BASE_URLS = {
 
   //login
   LOGIN_CANDIDATE: "/login/candidate",
-  LOGOUT_CANDIDATE: "/logout/candidate",
   LOGIN_EMPLOYEE: "/login/employee",
-  LOGOUT_EMPLOYEE: "/logout/employee",
+  LOGOUT: "/logout",
 
   //constant
   CONSTANT: "/constants",
 
   // tests
-  CREATE_TEST: "/tests/create",
+  TEST: "/tests",
+
+  // check in - out
+  CHECK_IN_OUT: "/check-in-out",
 };
 
 export const ROUTES = {
@@ -53,15 +55,19 @@ export const ROUTES = {
   TEST_TOPICS_MODIFY: `${BASE_URLS.TEST_TOPIC}/:topicId`,
 
   LOGIN_CANDIDATE: BASE_URLS.LOGIN_CANDIDATE,
-  LOGOUT_CANDIDATE: BASE_URLS.LOGOUT_CANDIDATE,
   LOGIN_EMPLOYEE: BASE_URLS.LOGIN_EMPLOYEE,
-  LOGOUT_EMPLOYEE: BASE_URLS.LOGOUT_EMPLOYEE,
+  LOGOUT: BASE_URLS.LOGOUT,
 
   // constants
   TEST_QUESTION_CONSTANTS: `${BASE_URLS.CONSTANT}/test-questions`,
 
   // tests
-  CREATE_TEST: `${BASE_URLS.CREATE_TEST}`,
+  TEST_MODIFY: `${BASE_URLS.TEST}/:testId`,
+  CREATE_TEST: `${BASE_URLS.TEST}/create`,
+  SAVE_TEST: `${BASE_URLS.TEST}/save`,
+
+  // check in out
+  CHECK_IN_OUT: BASE_URLS.CHECK_IN_OUT,
 };
 
 export const PASSWORD_SALT_ROUNDS = 10;
@@ -71,14 +77,14 @@ export const GUEST = {
 };
 
 export const CANDIDATE = {
-  [ROUTES.LOGOUT_CANDIDATE]: ["POST"],
+  [ROUTES.LOGOUT]: ["POST"],
 };
 
 export const EMPLOYEE = {
   [ROUTES.EMPLOYEE_PROFILE_MODIFY]: ["GET"],
   [ROUTES.EMPLOYEE_ACCOUNT_MODIFY]: ["PATCH"],
-
-  [ROUTES.LOGOUT_EMPLOYEE]: ["POST"],
+  [ROUTES.CHECK_IN_OUT]: ["GET", "POST"],
+  [ROUTES.LOGOUT]: ["POST"],
 };
 
 export const DIVISION_MANAGER = {
