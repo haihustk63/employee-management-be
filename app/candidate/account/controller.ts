@@ -27,6 +27,7 @@ const createNewAccount = async (req: Request, res: Response) => {
   try {
     const { data } = req.body;
     const { username, password, candidateId } = data;
+
     const hashPassword = bcrypt.hashSync(password, PASSWORD_SALT_ROUNDS);
     await prisma.candidateAccount.create({
       data: {

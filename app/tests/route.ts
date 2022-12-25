@@ -1,13 +1,36 @@
 import { Router } from "express";
 import { ROUTES } from "constants/index";
-import { createTest, saveTest, getTest } from "./controller";
+import {
+  createTest,
+  createTestRandom,
+  saveTest,
+  getTest,
+  submitTest,
+  getAllTests,
+  getTestSubmitStatus,
+} from "./controller";
+import { authMiddleware } from "@middleware/index";
 
-const { CREATE_TEST, SAVE_TEST, TEST_MODIFY } = ROUTES;
+const {
+  CREATE_TEST_MANUAL,
+  CREATE_TEST_RANDOM,
+  SAVE_TEST,
+  TEST_MODIFY,
+  TEST_STATUS,
+  TESTS,
+} = ROUTES;
 
 const router = Router();
 
+//get test
+router.get(TESTS, getAllTests);
 router.get(TEST_MODIFY, getTest);
-router.post(CREATE_TEST, createTest);
+router.get(TEST_STATUS, getTestSubmitStatus);
+// submit answers
+router.post(TEST_MODIFY, authMiddleware, submitTest);
+//
+router.post(CREATE_TEST_RANDOM, createTestRandom);
+router.post(CREATE_TEST_MANUAL, createTest);
 router.post(SAVE_TEST, saveTest);
 
 export default router;

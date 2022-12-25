@@ -25,13 +25,18 @@ export const BASE_URLS = {
 
   // tests
   TEST: "/tests",
+  CREATE_TEST: "/create-tests",
 
   // check in - out
   CHECK_IN_OUT: "/check-in-out",
+
+  // jobs
+  JOBS: "/jobs",
 };
 
 export const ROUTES = {
   CANDIDATE_APPLY: BASE_URLS.CANDIDATE_APPLY,
+  CANDIDATE_APPLY_ID: `${BASE_URLS.CANDIDATE_APPLY}/:candidateId`,
   CANDIDATE_ACCOUNT: BASE_URLS.CANDIDATE_ACCOUNT,
   CANDIDATE_ACCOUNT_MODIFY: `${BASE_URLS.CANDIDATE_ACCOUNT}/:username`,
 
@@ -60,14 +65,22 @@ export const ROUTES = {
 
   // constants
   TEST_QUESTION_CONSTANTS: `${BASE_URLS.CONSTANT}/test-questions`,
+  ROLES_CONSTANTS: `${BASE_URLS.CONSTANT}/roles`,
 
   // tests
+  TESTS: BASE_URLS.TEST,
   TEST_MODIFY: `${BASE_URLS.TEST}/:testId`,
-  CREATE_TEST: `${BASE_URLS.TEST}/create`,
-  SAVE_TEST: `${BASE_URLS.TEST}/save`,
+  TEST_STATUS: `${BASE_URLS.TEST}/status/:testId`,
+  CREATE_TEST_RANDOM: `${BASE_URLS.TEST}/create/random`,
+  CREATE_TEST_MANUAL: `${BASE_URLS.TEST}/create/manual`,
+  SAVE_TEST: BASE_URLS.TEST,
 
   // check in out
   CHECK_IN_OUT: BASE_URLS.CHECK_IN_OUT,
+
+  // jobs
+  JOBS: `${BASE_URLS.JOBS}`,
+  JOBS_MODIFY: `${BASE_URLS.JOBS}/:jobId`,
 };
 
 export const PASSWORD_SALT_ROUNDS = 10;
@@ -78,6 +91,8 @@ export const GUEST = {
 
 export const CANDIDATE = {
   [ROUTES.LOGOUT]: ["POST"],
+  [ROUTES.TEST_MODIFY]: ["GET", "POST"],
+  [ROUTES.TEST_STATUS]: ["GET"],
 };
 
 export const EMPLOYEE = {

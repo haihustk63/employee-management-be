@@ -16,14 +16,21 @@ import {
   loginRouter,
   testsRouter,
   checkInOutRouter,
+  jobRouter,
 } from "@app/index";
 import { authMiddleware } from "./middleware";
+import { sendEmail } from "@config/mailtrap";
 
 const app: Express = express();
 
 const corsOption = {
   optionsSuccessStatus: 200,
-  origin: ["http://localhost:5173", "http://127.0.0.1:5173"],
+  origin: [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://127.0.0.1:3000",
+    "http://localhost:3000",
+  ],
   credentials: true,
 };
 
@@ -50,6 +57,7 @@ app.use([
   loginRouter,
   testsRouter,
   checkInOutRouter,
+  jobRouter,
 ]);
 
 app.listen(appPort, () => {

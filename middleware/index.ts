@@ -5,8 +5,8 @@ import { NOT_NEED_AUTH_PATH, PERMISSION } from "@constants/index";
 
 const authMiddleware = (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { path } = req;
-    if (NOT_NEED_AUTH_PATH.includes(path)) {
+    const { route } = req;
+    if (NOT_NEED_AUTH_PATH.includes(route.path)) {
       return next();
     }
 
@@ -45,9 +45,9 @@ const authMiddleware = (req: Request, res: Response, next: NextFunction) => {
 };
 
 const getPermission = (role: string, req: Request) => {
-  const { path, method } = req;
+  const { route, method } = req;
 
-  return !!PERMISSION[role][path]?.includes(method);
+  return !!PERMISSION[role][route.path]?.includes(method);
 };
 
 // const configResponseHeader = (

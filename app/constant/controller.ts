@@ -4,7 +4,7 @@ import {
 } from "@constants/type";
 import { Request, Response } from "express";
 
-const getTestQuestionContant = async (req: Request, res: Response) => {
+const getTestQuestionConstant = async (req: Request, res: Response) => {
   try {
     const { name } = req.query;
     switch (name) {
@@ -23,4 +23,13 @@ const getTestQuestionContant = async (req: Request, res: Response) => {
   }
 };
 
-export { getTestQuestionContant };
+const getRoleConstant = async (req: Request, res: Response) => {
+  // try {
+    
+  //   return 
+  // } catch (error: any) {
+  //   return res.sendStatus(400);
+  // }
+};
+
+export { getTestQuestionConstant, getRoleConstant };

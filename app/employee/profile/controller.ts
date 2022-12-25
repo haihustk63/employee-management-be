@@ -114,10 +114,6 @@ const getOneEmployeeProfile = async (req: Request, res: Response) => {
 const createNewEmployeeProfile = async (req: Request, res: Response) => {
   try {
     const { data } = req.body;
-
-    if (data.dateOfBirth) {
-      data.dateOfBirth = new Date(data.dateOfBirth);
-    }
     const profileData = { ...data };
     const deliveryId = profileData.deliveryId;
     const isManager = profileData.isManager;

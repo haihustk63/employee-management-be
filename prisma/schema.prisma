@@ -53,14 +53,13 @@ enum TestQuestionLevelEnum {
 }
 
 model Position {
-  id          Int         @id @default(autoincrement())
-  name        String      @db.VarChar(20)
+  id          Int        @id @default(autoincrement())
+  name        String     @db.VarChar(20)
   description String?
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @default(now()) @updatedAt
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @default(now()) @updatedAt
   employees   Employee[]
-  candidates  Candidate[]
-  jobs        Jobs[]
+  jobs        Job[]
 
   @@map("position")
 }
@@ -123,14 +122,15 @@ model Candidate {
   email            String            @db.VarChar(30)
   appointmentTime  DateTime?         @map("appointment_time")
   cvLink           String            @map("cv_link")
-  positionId       Int               @map("position_id")
-  position         Position          @relation(fields: [positionId], references: [id])
   interviewerId    Int?              @map("interviewer_id")
-  interViewer      Employee?         @relation(fields: [interviewerId], references: [id])
+  interviewer      Employee?         @relation(fields: [interviewerId], references: [id])
+  assessment       Int?              @default(2)
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @default(now()) @updatedAt
   candidateAccount CandidateAccount?
   skillTest        SkillTest?
+  job              Job?              @relation(fields: [jobId], references: [id])
+  jobId            Int?
 
   @@map("candidate")
 }
@@ -321,6 +321,7 @@ model SkillTest {
   candidateId       Int?                @unique @map("candidate_id")
   candidate         Candidate?          @relation(references: [id], fields: [candidateId])
   score             Decimal?
+  isSubmitted       Boolean             @default(false) @map("is_submitted")
   testQuestionTests TestQuestionTests[]
 }
 
@@ -328,19 +329,22 @@ model TestQuestionTests {
   questionId Int          @map("question_id")
   question   TestQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
   testId     Int          @map("test_id")
-  test       SkillTest    @relation(references: [id], fields: [testId])
+  test       SkillTest    @relation(references: [id], fields: [testId], onDelete: Cascade)
   answer     Json?
 
   @@unique([questionId, testId])
 }
 
-model Jobs {
-  id         Int       @id @default(autoincrement())
+model Job {
+  id         Int         @id @default(autoincrement())
   title      String
-  typeOfJob  Int       @map("type_of_job")
-  upTo       Int?      @map("up_to")
-  level      Json?
-  jobDetail  String?   @map("job_detail")
-  positionId Int?      @map("position_id")
-  position   Position? @relation(fields: [positionId], references: [id])
+  // 0 - parttime, 1 - fulltime
+  typeOfJob  Int         @map("type_of_job")
+  upTo       Int?        @map("up_to")
+  // intern, fresher, junior, middle, senior
+  level      Int
+  jobDetail  String?     @map("job_detail") @db.LongText
+  positionId Int?        @map("position_id")
+  position   Position?   @relation(fields: [positionId], references: [id])
+  candidate  Candidate[]
 }
