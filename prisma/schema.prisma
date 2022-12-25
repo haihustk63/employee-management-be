@@ -55,7 +55,7 @@ enum TestQuestionLevelEnum {
 model Position {
   id          Int        @id @default(autoincrement())
   name        String     @db.VarChar(20)
-  description String?
+  description String?    @db.LongText
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @default(now()) @updatedAt
   employees   Employee[]
