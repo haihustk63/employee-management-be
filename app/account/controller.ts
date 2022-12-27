@@ -1,18 +1,15 @@
+import bcrypt from "bcrypt";
 import { PASSWORD_SALT_ROUNDS } from "@constants/index";
 import { PrismaClient } from "@prisma/client";
-import { PrismaClientKnownRequestError } from "@prisma/client/runtime";
-import bcrypt from "bcrypt";
 import { Request, Response } from "express";
 
 const prisma = new PrismaClient();
 
 const getAllAccounts = async (req: Request, res: Response) => {
   try {
-    const allAccounts = await prisma.candidateAccount.findMany({
+    const allAccounts = await prisma.employeeAccount.findMany({
       select: {
-        candidateId: true,
-        candidate: true,
-        username: true,
+        email: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -26,17 +23,17 @@ const getAllAccounts = async (req: Request, res: Response) => {
 const createNewAccount = async (req: Request, res: Response) => {
   try {
     const { data } = req.body;
-    const { username, password, candidateId } = data;
+    const { email, password, employeeId } = data;
 
     const hashPassword = bcrypt.hashSync(password, PASSWORD_SALT_ROUNDS);
-    await prisma.candidateAccount.create({
+    await prisma.employeeAccount.create({
       data: {
-        username,
+        email,
         password: hashPassword,
-        candidateId,
+        employeeId,
       },
     });
-    return res.status(200).send({ newAccount: { username } });
+    return res.status(200).send({ newAccount: { email } });
   } catch (error) {
     return res.status(400).send({ error });
   }
@@ -44,8 +41,8 @@ const createNewAccount = async (req: Request, res: Response) => {
 
 const deleteAccount = async (req: Request, res: Response) => {
   try {
-    const { username } = req.params;
-    await prisma.candidateAccount.delete({ where: { username } });
+    const { email } = req.params;
+    await prisma.employeeAccount.delete({ where: { email } });
     return res.sendStatus(200);
   } catch (error) {
     return res.status(400).send({ error });

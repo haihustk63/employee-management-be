@@ -116,45 +116,33 @@ model DeliveryEmployee {
 }
 
 model Candidate {
-  id               Int               @id @default(autoincrement())
-  name             String            @db.VarChar(30)
-  phone            String?           @db.VarChar(10)
-  email            String            @db.VarChar(30)
-  appointmentTime  DateTime?         @map("appointment_time")
-  cvLink           String            @map("cv_link")
-  interviewerId    Int?              @map("interviewer_id")
-  interviewer      Employee?         @relation(fields: [interviewerId], references: [id])
-  assessment       Int?              @default(2)
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @default(now()) @updatedAt
-  candidateAccount CandidateAccount?
-  skillTest        SkillTest?
-  job              Job?              @relation(fields: [jobId], references: [id])
-  jobId            Int?
+  id              Int        @id @default(autoincrement())
+  name            String     @db.VarChar(30)
+  phone           String?    @db.VarChar(10)
+  email           String     @db.VarChar(30)
+  appointmentTime DateTime?  @map("appointment_time")
+  cvLink          String     @map("cv_link")
+  interviewerId   Int?       @map("interviewer_id")
+  interviewer     Employee?  @relation(fields: [interviewerId], references: [id])
+  assessment      Int?       @default(2)
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @default(now()) @updatedAt
+  skillTest       SkillTest?
+  job             Job?       @relation(fields: [jobId], references: [id])
+  jobId           Int?
 
   @@map("candidate")
 }
 
 model EmployeeAccount {
-  email      String   @unique
+  email      String    @unique
   password   String
-  employeeId Int      @unique @map("employee_id")
-  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @default(now()) @updatedAt
+  employeeId Int?      @unique @map("employee_id")
+  employee   Employee? @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @default(now()) @updatedAt
 
   @@map("employee_account")
-}
-
-model CandidateAccount {
-  candidateId Int       @unique @map("candidate_id")
-  candidate   Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
-  username    String    @unique
-  password    String
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @default(now()) @updatedAt
-
-  @@map("candidate_account")
 }
 
 model DeviceType {

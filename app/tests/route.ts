@@ -8,6 +8,7 @@ import {
   submitTest,
   getAllTests,
   getTestSubmitStatus,
+  updateTest,
 } from "./controller";
 import { authMiddleware } from "@middleware/index";
 
@@ -32,5 +33,6 @@ router.post(TEST_MODIFY, authMiddleware, submitTest);
 router.post(CREATE_TEST_RANDOM, createTestRandom);
 router.post(CREATE_TEST_MANUAL, createTest);
 router.post(SAVE_TEST, saveTest);
+router.patch(TEST_MODIFY, updateTest);
 
 export default router;

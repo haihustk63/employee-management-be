@@ -79,6 +79,51 @@ const saveTest = async (req: Request, res: Response) => {
   }
 };
 
+const updateTest = async (req: Request, res: Response) => {
+  try {
+    const { data } = req.body;
+    const { questionIds, testId } = data;
+
+    const questions = await prisma.testQuestionTests.findMany({
+      where: {
+        testId: Number(testId),
+      },
+    });
+
+    const oldQuestionIds = questions?.map(
+      (question: any) => question.questionId
+    );
+
+    const newIds = questionIds?.filter(
+      (id: number) => !oldQuestionIds.includes(id)
+    );
+    const removeIds = oldQuestionIds?.filter(
+      (id: number) => !questionIds.includes(id)
+    );
+
+    const removeRecords = prisma.testQuestionTests.deleteMany({
+      where: {
+        testId: {
+          in: removeIds,
+        },
+      },
+    });
+
+    const addRecords = prisma.testQuestionTests.createMany({
+      data: newIds?.map((id: number) => ({
+        testId: Number(testId),
+        questionId: id,
+      })),
+    });
+
+    await prisma.$transaction([removeRecords, addRecords]);
+
+    return res.sendStatus(200);
+  } catch (error: any) {
+    return res.sendStatus(400);
+  }
+};
+
 const getTest = async (req: Request, res: Response) => {
   try {
     const { testId } = req.params;
@@ -87,7 +132,11 @@ const getTest = async (req: Request, res: Response) => {
         testId: Number(testId),
       },
       include: {
-        question: true,
+        question: {
+          include: {
+            topic: true,
+          },
+        },
         test: {
           select: {
             isSubmitted: true,
@@ -242,4 +291,5 @@ export {
   submitTest,
   getAllTests,
   getTestSubmitStatus,
+  updateTest
 };

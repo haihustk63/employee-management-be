@@ -1,12 +1,12 @@
 import { Router } from "express";
 
 import { ROUTES } from "@constants/index";
-import { loginCandidate, loginEmployee, logout } from "./controller";
+import { loginEmployee, logout } from "./controller";
 
 const router = Router();
 const { LOGIN_CANDIDATE, LOGOUT, LOGIN_EMPLOYEE } = ROUTES;
 
-router.post(LOGIN_CANDIDATE, loginCandidate);
+// router.post(LOGIN_CANDIDATE, loginCandidate);
 
 router.post(LOGIN_EMPLOYEE, loginEmployee);
 

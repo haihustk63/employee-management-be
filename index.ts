@@ -5,9 +5,7 @@ import cookieParser from "cookie-parser";
 import { appPort } from "./config";
 import {
   candidateApplyRouter,
-  candidateAccountRouter,
   employeeProfileRouter,
-  employeeAccountRouter,
   deliveryRouter,
   positionRouter,
   testTopicRouter,
@@ -17,6 +15,7 @@ import {
   testsRouter,
   checkInOutRouter,
   jobRouter,
+  accountRouter
 } from "@app/index";
 import { authMiddleware } from "./middleware";
 import { sendEmail } from "@config/mailtrap";
@@ -46,9 +45,8 @@ app.use((req, res, next) => {
 
 app.use([
   candidateApplyRouter,
-  candidateAccountRouter,
+  accountRouter,
   employeeProfileRouter,
-  employeeAccountRouter,
   deliveryRouter,
   positionRouter,
   testTopicRouter,

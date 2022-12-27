@@ -1,8 +1,6 @@
-export { default as candidateApplyRouter } from "./candidate/apply/route";
-export { default as candidateAccountRouter } from "./candidate/account/route";
+export { default as candidateApplyRouter } from "./candidate/route";
 
-export { default as employeeProfileRouter } from "./employee/profile/route";
-export { default as employeeAccountRouter } from "./employee/account/route";
+export { default as employeeProfileRouter } from "./employee/route";
 
 export { default as deliveryRouter } from "./delivery/route";
 
@@ -21,3 +19,5 @@ export { default as testsRouter } from "./tests/route";
 export { default as checkInOutRouter } from "./checkin-out/route";
 
 export { default as jobRouter } from "./jobs/route";
+
+export { default as accountRouter } from "./account/route";

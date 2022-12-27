@@ -4,16 +4,15 @@ import { ROUTES } from "@constants/index";
 import { getAllAccounts, createNewAccount, deleteAccount } from "./controller";
 
 const router = Router();
-const { CANDIDATE_ACCOUNT, CANDIDATE_ACCOUNT_MODIFY } = ROUTES;
+const { ACCOUNT, ACCOUNT_MODIFY } = ROUTES;
 
 // get all account
-router.get(CANDIDATE_ACCOUNT, getAllAccounts);
+router.get(ACCOUNT, getAllAccounts);
 
 // create an account
-router.post(CANDIDATE_ACCOUNT, createNewAccount);
+router.post(ACCOUNT, createNewAccount);
 
 //delete an account
-router.delete(CANDIDATE_ACCOUNT_MODIFY, deleteAccount);
-
+router.delete(ACCOUNT_MODIFY, deleteAccount);
 
 export default router;
