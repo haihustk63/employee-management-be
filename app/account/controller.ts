@@ -12,6 +12,7 @@ const getAllAccounts = async (req: Request, res: Response) => {
         email: true,
         createdAt: true,
         updatedAt: true,
+        employeeId: true,
       },
     });
     return res.status(200).send({ allAccounts });
@@ -25,7 +26,7 @@ const createNewAccount = async (req: Request, res: Response) => {
     const { data } = req.body;
     const { email, password, employeeId } = data;
 
-    const hashPassword = bcrypt.hashSync(password, PASSWORD_SALT_ROUNDS);
+    const hashPassword = await bcrypt.hash(password, PASSWORD_SALT_ROUNDS);
     await prisma.employeeAccount.create({
       data: {
         email,

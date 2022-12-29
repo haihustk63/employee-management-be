@@ -16,8 +16,7 @@ export const BASE_URLS = {
   TEST_QUESTION_CLASSIFIED: "/classified/test-questions",
 
   //login
-  LOGIN_CANDIDATE: "/login/candidate",
-  LOGIN_EMPLOYEE: "/login/employee",
+  LOGIN: "/login",
   LOGOUT: "/logout",
 
   //constant
@@ -32,6 +31,9 @@ export const BASE_URLS = {
 
   // jobs
   JOBS: "/jobs",
+
+  // requests
+  REQUESTS: "/requests",
 };
 
 export const ROUTES = {
@@ -58,8 +60,7 @@ export const ROUTES = {
   TEST_TOPICS: BASE_URLS.TEST_TOPIC,
   TEST_TOPICS_MODIFY: `${BASE_URLS.TEST_TOPIC}/:topicId`,
 
-  LOGIN_CANDIDATE: BASE_URLS.LOGIN_CANDIDATE,
-  LOGIN_EMPLOYEE: BASE_URLS.LOGIN_EMPLOYEE,
+  LOGIN: BASE_URLS.LOGIN,
   LOGOUT: BASE_URLS.LOGOUT,
 
   // constants
@@ -78,8 +79,12 @@ export const ROUTES = {
   CHECK_IN_OUT: BASE_URLS.CHECK_IN_OUT,
 
   // jobs
-  JOBS: `${BASE_URLS.JOBS}`,
+  JOBS: BASE_URLS.JOBS,
   JOBS_MODIFY: `${BASE_URLS.JOBS}/:jobId`,
+
+  // requests
+  REQUESTS: BASE_URLS.REQUESTS,
+  REQUESTS_MODIFY: `${BASE_URLS.REQUESTS}/:requestId`,
 };
 
 export const PASSWORD_SALT_ROUNDS = 10;
@@ -111,6 +116,5 @@ export const PERMISSION: { [key: string]: { [key: string]: string[] } } = {
 };
 
 export const NOT_NEED_AUTH_PATH = [
-  ROUTES.LOGIN_CANDIDATE,
-  ROUTES.LOGIN_EMPLOYEE,
+  ROUTES.LOGIN,
 ];

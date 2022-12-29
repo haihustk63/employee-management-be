@@ -6,7 +6,7 @@ const prisma = new PrismaClient();
 const createNewTestQuestion = async (req: Request, res: Response) => {
   try {
     const { data } = req.body;
-    const { topic: topicId, ...restData } = data;
+    const { topicId, ...restData } = data;
 
     const newTestQuestion = await prisma.testQuestion.create({
       data: {

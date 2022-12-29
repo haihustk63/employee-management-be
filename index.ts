@@ -15,7 +15,8 @@ import {
   testsRouter,
   checkInOutRouter,
   jobRouter,
-  accountRouter
+  accountRouter,
+  requestRouter,
 } from "@app/index";
 import { authMiddleware } from "./middleware";
 import { sendEmail } from "@config/mailtrap";
@@ -56,6 +57,7 @@ app.use([
   testsRouter,
   checkInOutRouter,
   jobRouter,
+  requestRouter,
 ]);
 
 app.listen(appPort, () => {

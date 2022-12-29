@@ -23,23 +23,6 @@ enum WorkingStatusEnum {
   TEMPORARY_LAYOFFS
 }
 
-enum CommonRequestEnum {
-  BEING_LATE
-  LEAVING_EARLY
-  OVER_TIME
-}
-
-enum RequestStatusEnum {
-  PENDING
-  ACCEPTED
-  REJECTED
-}
-
-enum RequestForAbsentTypeEnum {
-  UNPAID_LEAVE
-  PAID_LEAVE
-}
-
 enum TestQuestionTypeEnum {
   ONE_CHOICE
   MULTIPLE_CHOICE
@@ -76,30 +59,28 @@ model Delivery {
 }
 
 model Employee {
-  id                    Int                    @id @default(autoincrement())
-  firstName             String                 @map("first_name") @db.VarChar(20)
-  middleName            String?                @map("middle_name") @db.VarChar(20)
-  lastName              String                 @map("last_name") @db.VarChar(20)
-  phoneNumber           String?                @map("phone_number") @db.VarChar(10)
-  dateOfBirth           DateTime?              @map("date_of_birth")
-  positionId            Int                    @map("position_id")
-  position              Position               @relation(fields: [positionId], references: [id])
-  joinDate              DateTime               @default(now()) @map("join_date")
-  location              Json?
-  role                  RolesEnum              @default(EMPLOYEE)
-  paidLeaveCount        Int                    @default(0) @map("paid_leave_count")
-  workingStatus         WorkingStatusEnum      @default(PROBATIONARY) @map("working_status")
-  createdAt             DateTime               @default(now())
-  updatedAt             DateTime               @default(now()) @updatedAt
-  employeeAccount       EmployeeAccount?
-  devices               Device[]
-  checkInOut            CheckInOut[]
-  requestWorkingRemotes RequestWorkingRemote[]
-  commonRequests        CommonRequest[]
-  requestForAbsents     RequestForAbsent[]
-  educationPrograms     EmployeeEducation[]
-  candidates            Candidate[]
-  deliveryEmployee      DeliveryEmployee?
+  id                Int                 @id @default(autoincrement())
+  firstName         String              @map("first_name") @db.VarChar(20)
+  middleName        String?             @map("middle_name") @db.VarChar(20)
+  lastName          String              @map("last_name") @db.VarChar(20)
+  phoneNumber       String?             @map("phone_number") @db.VarChar(10)
+  dateOfBirth       DateTime?           @map("date_of_birth")
+  positionId        Int                 @map("position_id")
+  position          Position            @relation(fields: [positionId], references: [id])
+  joinDate          DateTime            @default(now()) @map("join_date")
+  location          Json?
+  role              RolesEnum           @default(EMPLOYEE)
+  paidLeaveCount    Int                 @default(0) @map("paid_leave_count")
+  workingStatus     WorkingStatusEnum   @default(PROBATIONARY) @map("working_status")
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @default(now()) @updatedAt
+  employeeAccount   EmployeeAccount?
+  devices           Device[]
+  checkInOut        CheckInOut[]
+  requests          Request[]
+  educationPrograms EmployeeEducation[]
+  candidates        Candidate[]
+  deliveryEmployee  DeliveryEmployee?
 
   @@map("employee")
 }
@@ -196,42 +177,32 @@ model CheckInOut {
   @@map("check_in_out")
 }
 
-model CommonRequest {
-  employeeId Int               @map("employee_id")
-  employee   Employee          @relation(fields: [employeeId], references: [id])
-  date       DateTime          @default(now())
-  duration   Int
-  type       CommonRequestEnum @default(BEING_LATE)
-  status     RequestStatusEnum @default(PENDING)
-  createdAt  DateTime          @default(now())
+// MODIFY_CHECKIN: 1
+// MODIFY_CHECKOUT: 2
+// UNPAID_LEAVE:3
+// ANNUAL_LEAVE:4
+// OVER_TIME: 5
+// REMOTE: 6
+
+//status
+// PENDING: 1
+// ACCEPTED: 2
+// REJECTED: 3
+
+model Request {
+  id          Int      @id @default(autoincrement())
+  employeeId  Int      @map("employee_id")
+  employee    Employee @relation(fields: [employeeId], references: [id])
+  date        DateTime @default(now())
+  duration    String?
+  reason      String?
+  type        Int      @default(1)
+  status      Int      @default(1)
+  isCancelled Boolean  @default(false)
+  createdAt   DateTime @default(now())
 
   @@unique([employeeId, date, type])
   @@map("common_request")
-}
-
-model RequestWorkingRemote {
-  employeeId        Int               @map("employee_id")
-  employee          Employee          @relation(fields: [employeeId], references: [id])
-  date              DateTime          @default(now())
-  isRemoteMorning   Boolean           @default(false) @map("is_remote_morning")
-  isRemoteAfternoon Boolean           @default(false) @map("is_remote_afternoon")
-  status            RequestStatusEnum @default(PENDING)
-  createdAt         DateTime          @default(now())
-
-  @@unique([employeeId, date])
-  @@map("request_working_remote")
-}
-
-model RequestForAbsent {
-  employeeId Int                      @map("employee_id")
-  employee   Employee                 @relation(fields: [employeeId], references: [id])
-  date       DateTime                 @default(now())
-  type       RequestForAbsentTypeEnum @default(UNPAID_LEAVE)
-  status     RequestStatusEnum        @default(PENDING)
-  createdAt  DateTime                 @default(now())
-
-  @@unique([employeeId, date])
-  @@map("request_for_absent")
 }
 
 model Tag {

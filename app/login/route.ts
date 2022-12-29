@@ -1,14 +1,14 @@
 import { Router } from "express";
 
 import { ROUTES } from "@constants/index";
-import { loginEmployee, logout } from "./controller";
+import { login, logout } from "./controller";
 
 const router = Router();
-const { LOGIN_CANDIDATE, LOGOUT, LOGIN_EMPLOYEE } = ROUTES;
+const { LOGIN, LOGOUT } = ROUTES;
 
 // router.post(LOGIN_CANDIDATE, loginCandidate);
 
-router.post(LOGIN_EMPLOYEE, loginEmployee);
+router.post(LOGIN, login);
 
 router.post(LOGOUT, logout);
 
