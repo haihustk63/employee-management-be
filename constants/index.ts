@@ -77,6 +77,8 @@ export const ROUTES = {
 
   // check in out
   CHECK_IN_OUT: BASE_URLS.CHECK_IN_OUT,
+  CHECK_IN_OUT_LIST: `${BASE_URLS.CHECK_IN_OUT}/list`,
+  CHECK_IN_OUT_TIMESHEET: `${BASE_URLS.CHECK_IN_OUT}/timesheet`,
 
   // jobs
   JOBS: BASE_URLS.JOBS,
@@ -115,6 +117,4 @@ export const PERMISSION: { [key: string]: { [key: string]: string[] } } = {
   DIVISION_MANAGER,
 };
 
-export const NOT_NEED_AUTH_PATH = [
-  ROUTES.LOGIN,
-];
+export const NOT_NEED_AUTH_PATH = [ROUTES.LOGIN];

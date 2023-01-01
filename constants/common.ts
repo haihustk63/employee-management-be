@@ -8,3 +8,10 @@ export const STATUS_CODE = {
   NOT_FOUND: 404,
   SERVER_ERROR: 500,
 };
+
+export const WORKING_TIME = {
+  MORNING_START: "8:00",
+  MORNING_END: "12:00",
+  AFTERNOON_START: "13:00",
+  AFTERNOON_END: "17:00",
+};
