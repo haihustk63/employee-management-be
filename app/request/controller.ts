@@ -72,7 +72,7 @@ const deleteRequest = async (req: Request, res: Response) => {
   }
 };
 
-const getOneTestQuestion = async (req: Request, res: Response) => {
+const getOneRequest = async (req: Request, res: Response) => {
   try {
     const { requestId } = req.params;
 
@@ -92,6 +92,6 @@ export {
   createNewRequest,
   updateRequest,
   deleteRequest,
-  getOneTestQuestion,
+  getOneRequest,
   getRequests,
 };

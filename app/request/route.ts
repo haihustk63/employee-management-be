@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { ROUTES } from "constants/index";
 import {
-  getOneTestQuestion,
+  getOneRequest,
   createNewRequest,
   deleteRequest,
   updateRequest,
@@ -16,7 +16,7 @@ router.get(REQUESTS, getRequests);
 
 router.post(REQUESTS, createNewRequest);
 
-router.get(REQUESTS_MODIFY, getOneTestQuestion);
+router.get(REQUESTS_MODIFY, getOneRequest);
 
 router.patch(REQUESTS_MODIFY, updateRequest);
 
