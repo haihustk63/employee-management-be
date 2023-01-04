@@ -1,7 +1,7 @@
 import bcrypt from "bcrypt";
 import { PASSWORD_SALT_ROUNDS } from "@constants/index";
 import { PrismaClient } from "@prisma/client";
-import { Request, Response } from "express";
+import { Request, RequestHandler, Response } from "express";
 
 const prisma = new PrismaClient();
 
@@ -13,6 +13,13 @@ const getAllAccounts = async (req: Request, res: Response) => {
         createdAt: true,
         updatedAt: true,
         employeeId: true,
+        employee: {
+          select: {
+            firstName: true,
+            lastName: true,
+            middleName: true,
+          },
+        },
       },
     });
     return res.status(200).send({ allAccounts });
@@ -21,7 +28,7 @@ const getAllAccounts = async (req: Request, res: Response) => {
   }
 };
 
-const createNewAccount = async (req: Request, res: Response) => {
+const createNewAccount: RequestHandler = async (req, res, next) => {
   try {
     const { data } = req.body;
     const { email, password, employeeId } = data;
@@ -40,9 +47,29 @@ const createNewAccount = async (req: Request, res: Response) => {
   }
 };
 
+const updateAccount = async (req: Request, res: Response) => {
+  try {
+    const { email = "", employeeId = "" } = req.body.data;
+    if (!employeeId) {
+      throw new Error("Need employeeId");
+    }
+    await prisma.employeeAccount.update({
+      where: {
+        email,
+      },
+      data: {
+        employeeId: Number(employeeId),
+      },
+    });
+    return res.sendStatus(200);
+  } catch (error) {
+    return res.status(400).send({ error });
+  }
+};
+
 const deleteAccount = async (req: Request, res: Response) => {
   try {
-    const { email } = req.params;
+    const { email = "" } = req.body.data;
     await prisma.employeeAccount.delete({ where: { email } });
     return res.sendStatus(200);
   } catch (error) {
@@ -50,4 +77,4 @@ const deleteAccount = async (req: Request, res: Response) => {
   }
 };
 
-export { getAllAccounts, createNewAccount, deleteAccount };
+export { getAllAccounts, createNewAccount, deleteAccount, updateAccount };

@@ -93,3 +93,37 @@ export const REQUEST_STATUS = {
     label: "Rejected",
   },
 };
+
+export const ROLES = {
+  EMPLOYEE: {
+    value: 1,
+    label: "Employee",
+  },
+  DIVISION_MANAGER: {
+    value: 2,
+    label: "Division Manager",
+  },
+  ADMIN: {
+    value: 3,
+    label: "Admin",
+  },
+  SUPER_ADMIN: {
+    value: 4,
+    label: "Super Admin",
+  },
+};
+
+export const WORKING_STATUS = {
+  OFFICIAL: {
+    value: 1,
+    label: "Official",
+  },
+  PROBATIONARY: {
+    value: 2,
+    label: "Probationary",
+  },
+  TEMPORARY_LAYOFFS: {
+    value: 3,
+    label: "Temporary Layoffs",
+  },
+};

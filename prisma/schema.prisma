@@ -10,19 +10,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum RolesEnum {
-  EMPLOYEE
-  DIVISION_MANAGER
-  ADMIN
-  SUPER_ADMIN
-}
-
-enum WorkingStatusEnum {
-  OFFICIAL
-  PROBATIONARY
-  TEMPORARY_LAYOFFS
-}
-
 enum TestQuestionTypeEnum {
   ONE_CHOICE
   MULTIPLE_CHOICE
@@ -69,9 +56,9 @@ model Employee {
   position          Position            @relation(fields: [positionId], references: [id])
   joinDate          DateTime            @default(now()) @map("join_date")
   location          Json?
-  role              RolesEnum           @default(EMPLOYEE)
+  role              Int                 @default(1)
   paidLeaveCount    Int                 @default(0) @map("paid_leave_count")
-  workingStatus     WorkingStatusEnum   @default(PROBATIONARY) @map("working_status")
+  workingStatus     Int                 @default(2) @map("working_status")
   createdAt         DateTime            @default(now())
   updatedAt         DateTime            @default(now()) @updatedAt
   employeeAccount   EmployeeAccount?
@@ -89,7 +76,7 @@ model DeliveryEmployee {
   deliveryId Int      @map("delivery_id")
   delivery   Delivery @relation(fields: [deliveryId], references: [id], onDelete: Cascade)
   employeeId Int      @unique @map("employee_id")
-  employee   Employee @relation(fields: [employeeId], references: [id])
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
   isManager  Boolean  @default(false) @map("is_manager")
   createdAt  DateTime @default(now())
 
@@ -104,7 +91,7 @@ model Candidate {
   appointmentTime DateTime?  @map("appointment_time")
   cvLink          String     @map("cv_link")
   interviewerId   Int?       @map("interviewer_id")
-  interviewer     Employee?  @relation(fields: [interviewerId], references: [id])
+  interviewer     Employee?  @relation(fields: [interviewerId], references: [id], onDelete: SetNull)
   assessment      Int?       @default(2)
   createdAt       DateTime   @default(now())
   updatedAt       DateTime   @default(now()) @updatedAt
@@ -119,7 +106,7 @@ model EmployeeAccount {
   email      String    @unique
   password   String
   employeeId Int?      @unique @map("employee_id")
-  employee   Employee? @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  employee   Employee? @relation(fields: [employeeId], references: [id], onDelete: SetNull)
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @default(now()) @updatedAt
 
@@ -157,8 +144,8 @@ model Device {
   deviceBrand   DeviceBrand @relation(fields: [deviceBrandId], references: [id])
   option        Json?
   description   String?
-  employeeId    Int
-  employee      Employee    @relation(fields: [employeeId], references: [id])
+  employeeId    Int?
+  employee      Employee?   @relation(fields: [employeeId], references: [id], onDelete: SetNull)
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @default(now()) @updatedAt
 
@@ -168,7 +155,7 @@ model Device {
 // 0 - check in, 1- check out
 model CheckInOut {
   employeeId Int      @map("employee_id")
-  employee   Employee @relation(fields: [employeeId], references: [id])
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
   time       DateTime @default(now())
   type       Int      @default(0)
   createdAt  DateTime @default(now())
@@ -192,7 +179,7 @@ model CheckInOut {
 model Request {
   id          Int      @id @default(autoincrement())
   employeeId  Int      @map("employee_id")
-  employee    Employee @relation(fields: [employeeId], references: [id])
+  employee    Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
   date        DateTime @default(now())
   duration    String?
   reason      String?
@@ -205,22 +192,10 @@ model Request {
   @@map("common_request")
 }
 
-model Tag {
-  id                Int                @id @default(autoincrement())
-  name              String             @db.VarChar(20)
-  recruimentNews    RecruimentNews[]
-  educationPrograms EducationProgram[]
-  createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @default(now()) @updatedAt
-
-  @@map("tag")
-}
-
 model RecruimentNews {
   id        Int      @id @default(autoincrement())
   title     String
   content   String?
-  tags      Tag[]
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
@@ -231,24 +206,24 @@ model EducationProgram {
   id          Int                 @id @default(autoincrement())
   title       String
   content     String?
-  tags        Tag[]
-  maxSlot     Int?                @map("max_slot") @db.SmallInt
+  maxSlot     Int?                @map("max_slot")
   time        DateTime?
-  averageRate Int                 @default(0) @map("average_rate")
+  averageRate Int                 @default(5) @map("average_rate")
   employees   EmployeeEducation[]
   createdAt   DateTime            @default(now())
   updatedAt   DateTime            @default(now()) @updatedAt
 
-  @@map("educatipn_program")
+  @@map("education_program")
 }
 
 model EmployeeEducation {
   employeeId Int              @map("employee_id")
-  employee   Employee         @relation(fields: [employeeId], references: [id])
+  employee   Employee         @relation(fields: [employeeId], references: [id], onDelete: Cascade)
   programId  Int              @map("program_id")
-  program    EducationProgram @relation(fields: [programId], references: [id])
-  isTutor    Boolean          @default(false)
+  program    EducationProgram @relation(fields: [programId], references: [id], onDelete: Cascade)
+  isTutor    Boolean          @default(false) @map("is_tutor")
   rate       Int?
+  confirm    Boolean?         @default(false)
   createdAt  DateTime         @default(now())
 
   @@unique([employeeId, programId])

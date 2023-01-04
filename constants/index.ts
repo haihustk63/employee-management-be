@@ -34,6 +34,10 @@ export const BASE_URLS = {
 
   // requests
   REQUESTS: "/requests",
+
+  // education programs
+  EDUCATION_PROGRAMS: "/education-programs",
+  EDUCATION_PROGRAMS_JOIN: "/education-programs-join",
 };
 
 export const ROUTES = {
@@ -87,6 +91,11 @@ export const ROUTES = {
   // requests
   REQUESTS: BASE_URLS.REQUESTS,
   REQUESTS_MODIFY: `${BASE_URLS.REQUESTS}/:requestId`,
+
+  // education programs
+  EDUCATION_PROGRAMS: BASE_URLS.EDUCATION_PROGRAMS,
+  EDUCATION_PROGRAMS_MODIFY: `${BASE_URLS.EDUCATION_PROGRAMS}/:programId`,
+  EDUCATION_PROGRAMS_JOIN: BASE_URLS.EDUCATION_PROGRAMS_JOIN,
 };
 
 export const PASSWORD_SALT_ROUNDS = 10;

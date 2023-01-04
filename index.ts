@@ -17,9 +17,11 @@ import {
   jobRouter,
   accountRouter,
   requestRouter,
+  educationRouter
 } from "@app/index";
 import { authMiddleware } from "./middleware";
 import { sendEmail } from "@config/mailtrap";
+import { errorHandler } from "@middleware/error-handler";
 
 const app: Express = express();
 
@@ -58,6 +60,8 @@ app.use([
   checkInOutRouter,
   jobRouter,
   requestRouter,
+  educationRouter,
+  errorHandler
 ]);
 
 app.listen(appPort, () => {

@@ -1,4 +1,4 @@
-import { PrismaClient, RolesEnum, WorkingStatusEnum } from "@prisma/client";
+import { PrismaClient } from "@prisma/client";
 import { Response, Request } from "express";
 
 const prisma = new PrismaClient();
@@ -37,10 +37,10 @@ const getAllEmployeeProfile = async (req: Request, res: Response) => {
       equals: Number(position),
     },
     role: {
-      equals: role as RolesEnum,
+      equals: role,
     },
     workingStatus: {
-      equals: workingStatus as WorkingStatusEnum,
+      equals: workingStatus,
     },
   };
 
@@ -99,6 +99,7 @@ const getOneEmployeeProfile = async (req: Request, res: Response) => {
               select: {
                 name: true,
                 description: true,
+                id: true
               },
             },
           },
