@@ -4,19 +4,20 @@ import {
   createNewDelivery,
   getAllDeliveries,
   updateDelivery,
-  deleteDelivery
+  deleteDelivery,
 } from "./controller";
+import { authMiddleware } from "@middleware/index";
 
 const { DELIVERY, DELIVERY_MODIFY } = ROUTES;
 
 const router = Router();
 
-router.get(DELIVERY, getAllDeliveries);
+router.get(DELIVERY, authMiddleware, getAllDeliveries);
 
-router.post(DELIVERY, createNewDelivery);
+router.post(DELIVERY, authMiddleware, createNewDelivery);
 
-router.patch(DELIVERY_MODIFY, updateDelivery);
+router.patch(DELIVERY_MODIFY, authMiddleware, updateDelivery);
 
-router.delete(DELIVERY_MODIFY, deleteDelivery);
+router.delete(DELIVERY_MODIFY, authMiddleware, deleteDelivery);
 
 export default router;

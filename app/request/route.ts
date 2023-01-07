@@ -7,19 +7,20 @@ import {
   updateRequest,
   getRequests,
 } from "./controller";
+import { authMiddleware } from "@middleware/index";
 
 const { REQUESTS, REQUESTS_MODIFY } = ROUTES;
 
 const router = Router();
 
-router.get(REQUESTS, getRequests);
+router.get(REQUESTS, authMiddleware, getRequests);
 
-router.post(REQUESTS, createNewRequest);
+router.post(REQUESTS, authMiddleware, createNewRequest);
 
-router.get(REQUESTS_MODIFY, getOneRequest);
+router.get(REQUESTS_MODIFY, authMiddleware, getOneRequest);
 
-router.patch(REQUESTS_MODIFY, updateRequest);
+router.patch(REQUESTS_MODIFY, authMiddleware, updateRequest);
 
-router.delete(REQUESTS_MODIFY, deleteRequest);
+router.delete(REQUESTS_MODIFY, authMiddleware, deleteRequest);
 
 export default router;

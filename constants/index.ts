@@ -49,7 +49,6 @@ export const ROUTES = {
   EMPLOYEE_PROFILE_MODIFY: `${BASE_URLS.EMPLOYEE_PROFILE}/:employeeId`,
 
   ACCOUNT: BASE_URLS.ACCOUNT,
-  ACCOUNT_MODIFY: `${BASE_URLS.ACCOUNT}/:email`,
 
   POSITION: BASE_URLS.POSITION,
   POSITION_MODIFY: `${BASE_URLS.POSITION}/:positionId`,
@@ -100,30 +99,50 @@ export const ROUTES = {
 
 export const PASSWORD_SALT_ROUNDS = 10;
 
-export const GUEST = {
-  [ROUTES.CANDIDATE_APPLY]: ["POST"],
-};
-
-export const CANDIDATE = {
+const routeCandidate = {
   [ROUTES.LOGOUT]: ["POST"],
   [ROUTES.TEST_MODIFY]: ["GET", "POST"],
   [ROUTES.TEST_STATUS]: ["GET"],
 };
 
-export const EMPLOYEE = {
+const routeEmployee = {
   [ROUTES.EMPLOYEE_PROFILE_MODIFY]: ["GET"],
   [ROUTES.CHECK_IN_OUT]: ["GET", "POST"],
+  [ROUTES.CHECK_IN_OUT_LIST]: ["GET"],
+  [ROUTES.CHECK_IN_OUT_TIMESHEET]: ["GET"],
+  [ROUTES.REQUESTS]: ["GET", "POST"],
+  [ROUTES.REQUESTS_MODIFY]: ["PATCH"],
+  [ROUTES.EDUCATION_PROGRAMS]: ["GET"],
+  [ROUTES.EDUCATION_PROGRAMS_JOIN]: ["POST"],
   [ROUTES.LOGOUT]: ["POST"],
 };
 
-export const DIVISION_MANAGER = {
-  ...EMPLOYEE,
+const routeDivisionManager = {
+  ...routeEmployee,
+  [ROUTES.TESTS]: ["GET", "POST"],
+  [ROUTES.TEST_MODIFY]: ["GET", "PATCH", "DELETE"],
+  [ROUTES.TEST_QUESTION]: ["GET", "POST"],
+  [ROUTES.TEST_QUESTION_MODIFY]: ["GET", "PATCH", "DELETE"],
+  [ROUTES.TEST_TOPICS]: ["GET", "POST"],
+  [ROUTES.TEST_QUESTION_CLASSIFIED]: ["GET"],
+  [ROUTES.TEST_TOPICS_MODIFY]: ["GET", "PATCH", "DELETE"],
 };
 
 export const PERMISSION: { [key: string]: { [key: string]: string[] } } = {
-  CANDIDATE,
-  EMPLOYEE,
-  DIVISION_MANAGER,
+  candidate: routeCandidate,
+  employee: routeEmployee,
+  divisionManager: routeDivisionManager,
 };
 
-export const NOT_NEED_AUTH_PATH = [ROUTES.LOGIN];
+// check role admin: prevent set admin role
+
+export const NOT_NEED_AUTH_PATH = [
+  {
+    route: ROUTES.LOGIN,
+    method: "POST",
+  },
+  {
+    route: ROUTES.CANDIDATE_APPLY,
+    method: "POST",
+  },
+];

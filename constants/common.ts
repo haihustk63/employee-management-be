@@ -95,21 +95,25 @@ export const REQUEST_STATUS = {
 };
 
 export const ROLES = {
+  CANDIDATE: {
+    value: 0,
+    label: "candidate",
+  },
   EMPLOYEE: {
     value: 1,
-    label: "Employee",
+    label: "employee",
   },
   DIVISION_MANAGER: {
     value: 2,
-    label: "Division Manager",
+    label: "divisionManager",
   },
   ADMIN: {
     value: 3,
-    label: "Admin",
+    label: "admin",
   },
   SUPER_ADMIN: {
     value: 4,
-    label: "Super Admin",
+    label: "superAdmin",
   },
 };
 

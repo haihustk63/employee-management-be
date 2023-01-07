@@ -12,7 +12,7 @@ export { default as testQuestionRouter } from "./test-question/route";
 
 export { default as constantRouter } from "./constant/route";
 
-export { default as loginRouter } from "./login/route";
+export { default as loginRouter } from "./login-out/route";
 
 export { default as testsRouter } from "./tests/route";
 

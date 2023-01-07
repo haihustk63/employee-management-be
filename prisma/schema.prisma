@@ -10,18 +10,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum TestQuestionTypeEnum {
-  ONE_CHOICE
-  MULTIPLE_CHOICE
-  ESSAYS
-}
-
-enum TestQuestionLevelEnum {
-  EASY
-  MEDIUM
-  HARD
-}
-
 model Position {
   id          Int        @id @default(autoincrement())
   name        String     @db.VarChar(20)
@@ -52,8 +40,8 @@ model Employee {
   lastName          String              @map("last_name") @db.VarChar(20)
   phoneNumber       String?             @map("phone_number") @db.VarChar(10)
   dateOfBirth       DateTime?           @map("date_of_birth")
-  positionId        Int                 @map("position_id")
-  position          Position            @relation(fields: [positionId], references: [id])
+  positionId        Int?                @map("position_id")
+  position          Position?           @relation(fields: [positionId], references: [id], onDelete: SetNull)
   joinDate          DateTime            @default(now()) @map("join_date")
   location          Json?
   role              Int                 @default(1)
@@ -96,7 +84,7 @@ model Candidate {
   createdAt       DateTime   @default(now())
   updatedAt       DateTime   @default(now()) @updatedAt
   skillTest       SkillTest?
-  job             Job?       @relation(fields: [jobId], references: [id])
+  job             Job?       @relation(fields: [jobId], references: [id], onDelete: SetNull)
   jobId           Int?
 
   @@map("candidate")
@@ -235,19 +223,31 @@ model TestTopic {
   name              String         @db.VarChar(30)
   description       String?
   testTopicQuestion TestQuestion[]
+
+  @@map("test_topic")
 }
 
+// ONE_CHOICE : 1
+// MULTIPLE_CHOICE: 2
+// ESSAYS: 3
+
+// EASY: 1
+// MEDIUM: 2
+// HARD: 3
+
 model TestQuestion {
-  id                Int                   @id @default(autoincrement())
-  questionText      String                @map("question-text")
-  questionSource    Json?                 @map("question-source")
-  type              TestQuestionTypeEnum  @default(ONE_CHOICE)
-  level             TestQuestionLevelEnum @default(EASY)
+  id                Int                 @id @default(autoincrement())
+  questionText      String              @map("question-text")
+  questionSource    Json?               @map("question-source")
+  type              Int                 @default(1)
+  level             Int                 @default(1)
   options           Json?
   answer            Json?
   topicId           Int
-  topic             TestTopic             @relation(references: [id], fields: [topicId])
+  topic             TestTopic           @relation(references: [id], fields: [topicId])
   testQuestionTests TestQuestionTests[]
+
+  @@map("test_question")
 }
 
 model SkillTest {
@@ -257,6 +257,8 @@ model SkillTest {
   score             Decimal?
   isSubmitted       Boolean             @default(false) @map("is_submitted")
   testQuestionTests TestQuestionTests[]
+
+  @@map("skill_test")
 }
 
 model TestQuestionTests {
@@ -267,6 +269,7 @@ model TestQuestionTests {
   answer     Json?
 
   @@unique([questionId, testId])
+  @@map("test_question_tests")
 }
 
 model Job {
@@ -279,6 +282,8 @@ model Job {
   level      Int
   jobDetail  String?     @map("job_detail") @db.LongText
   positionId Int?        @map("position_id")
-  position   Position?   @relation(fields: [positionId], references: [id])
+  position   Position?   @relation(fields: [positionId], references: [id], onDelete: Cascade)
   candidate  Candidate[]
+
+  @@map("job")
 }

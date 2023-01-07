@@ -1,5 +1,8 @@
 import { PrismaClient } from "@prisma/client";
 import { Response, Request } from "express";
+import { ROLES } from "@constants/common";
+
+const { EMPLOYEE, DIVISION_MANAGER } = ROLES;
 
 const prisma = new PrismaClient();
 
@@ -75,6 +78,11 @@ const getAllEmployeeProfile = async (req: Request, res: Response) => {
             },
           },
         },
+        employeeAccount: {
+          select: {
+            email: true,
+          },
+        },
         position: true,
       },
     });
@@ -99,9 +107,14 @@ const getOneEmployeeProfile = async (req: Request, res: Response) => {
               select: {
                 name: true,
                 description: true,
-                id: true
+                id: true,
               },
             },
+          },
+        },
+        employeeAccount: {
+          select: {
+            email: true,
           },
         },
       },
@@ -115,15 +128,27 @@ const getOneEmployeeProfile = async (req: Request, res: Response) => {
 const createNewEmployeeProfile = async (req: Request, res: Response) => {
   try {
     const { data } = req.body;
+    const deliveryId = data.deliveryId;
+    const email = data.email;
+    const isManager = data.role === ROLES.DIVISION_MANAGER.value;
     const profileData = { ...data };
-    const deliveryId = profileData.deliveryId;
-    const isManager = profileData.isManager;
     delete profileData.deliveryId;
-    delete profileData.isManager;
+    delete profileData.email;
 
     const newEmployeeProfile = await prisma.employee.create({
       data: profileData,
     });
+
+    if (email) {
+      await prisma.employeeAccount.update({
+        data: {
+          employeeId: newEmployeeProfile.id,
+        },
+        where: {
+          email,
+        },
+      });
+    }
 
     if (deliveryId) {
       if (isManager) {
@@ -169,14 +194,12 @@ const updateEmployeeProfile = async (req: Request, res: Response) => {
     const { data } = req.body;
     const { employeeId } = req.params;
 
-    if (data.dateOfBirth) {
-      data.dateOfBirth = new Date(data.dateOfBirth);
-    }
+    const deliveryId = data.deliveryId;
+    const email = data.email;
+    const isManager = data.role === ROLES.DIVISION_MANAGER.value;
     const profileData = { ...data };
-    const deliveryId = profileData.deliveryId;
-    const isManager = profileData.isManager;
     delete profileData.deliveryId;
-    delete profileData.isManager;
+    delete profileData.email;
 
     const updatedEmployeeProfile = await prisma.employee.update({
       where: {
@@ -184,6 +207,17 @@ const updateEmployeeProfile = async (req: Request, res: Response) => {
       },
       data: profileData,
     });
+
+    if (email) {
+      await prisma.employeeAccount.update({
+        data: {
+          employeeId: Number(employeeId),
+        },
+        where: {
+          email,
+        },
+      });
+    }
 
     // Check if deliveryId is sent
     if (deliveryId) {

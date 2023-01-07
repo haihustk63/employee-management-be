@@ -24,15 +24,15 @@ const {
 const router = Router();
 
 //get test
-router.get(TESTS, getAllTests);
-router.get(TEST_MODIFY, getTest);
-router.get(TEST_STATUS, getTestSubmitStatus);
+router.get(TESTS, authMiddleware, getAllTests);
+router.get(TEST_MODIFY, authMiddleware, getTest);
+router.get(TEST_STATUS, authMiddleware, getTestSubmitStatus);
 // submit answers
-router.post(TEST_MODIFY, authMiddleware, submitTest);
+router.post(TEST_MODIFY, authMiddleware, authMiddleware, submitTest);
 //
-router.post(CREATE_TEST_RANDOM, createTestRandom);
-router.post(CREATE_TEST_MANUAL, createTest);
-router.post(SAVE_TEST, saveTest);
-router.patch(TEST_MODIFY, updateTest);
+router.post(CREATE_TEST_RANDOM, authMiddleware, createTestRandom);
+router.post(CREATE_TEST_MANUAL, authMiddleware, createTest);
+router.post(SAVE_TEST, authMiddleware, saveTest);
+router.patch(TEST_MODIFY, authMiddleware, updateTest);
 
 export default router;

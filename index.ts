@@ -1,27 +1,26 @@
-import express, { Express } from "express";
-import cors from "cors";
 import cookieParser from "cookie-parser";
+import cors from "cors";
+import express, { Express } from "express";
 
-import { appPort } from "./config";
 import {
-  candidateApplyRouter,
-  employeeProfileRouter,
-  deliveryRouter,
-  positionRouter,
-  testTopicRouter,
-  testQuestionRouter,
-  constantRouter,
-  loginRouter,
-  testsRouter,
-  checkInOutRouter,
-  jobRouter,
   accountRouter,
+  candidateApplyRouter,
+  checkInOutRouter,
+  constantRouter,
+  deliveryRouter,
+  educationRouter,
+  employeeProfileRouter,
+  jobRouter,
+  loginRouter,
+  positionRouter,
   requestRouter,
-  educationRouter
+  testQuestionRouter,
+  testsRouter,
+  testTopicRouter,
 } from "@app/index";
-import { authMiddleware } from "./middleware";
-import { sendEmail } from "@config/mailtrap";
 import { errorHandler } from "@middleware/error-handler";
+import { appPort } from "./config";
+import { ROUTES } from "./constants";
 
 const app: Express = express();
 
@@ -40,13 +39,8 @@ const corsOption = {
 app.use(cors(corsOption));
 app.use(express.json());
 app.use(cookieParser());
-// app.use(authMiddleware);
-app.use((req, res, next) => {
-  console.log(req.path);
-  next();
-});
 
-app.use([
+app.use(
   candidateApplyRouter,
   accountRouter,
   employeeProfileRouter,
@@ -62,7 +56,7 @@ app.use([
   requestRouter,
   educationRouter,
   errorHandler
-]);
+);
 
 app.listen(appPort, () => {
   console.log(`Congratulation! App is listening on port ${appPort}`);

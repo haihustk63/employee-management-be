@@ -73,6 +73,7 @@ const deleteAccount = async (req: Request, res: Response) => {
     await prisma.employeeAccount.delete({ where: { email } });
     return res.sendStatus(200);
   } catch (error) {
+    console.log(error);
     return res.status(400).send({ error });
   }
 };

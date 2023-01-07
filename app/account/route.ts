@@ -7,19 +7,20 @@ import {
   deleteAccount,
   updateAccount,
 } from "./controller";
+import { authMiddleware } from "@middleware/index";
 
 const router = Router();
 const { ACCOUNT } = ROUTES;
 
 // get all account
-router.get(ACCOUNT, getAllAccounts);
+router.get(ACCOUNT, authMiddleware, getAllAccounts);
 
 // create an account
-router.post(ACCOUNT, createNewAccount);
+router.post(ACCOUNT, authMiddleware, createNewAccount);
 
 //delete an account
-router.delete(ACCOUNT, deleteAccount);
+router.delete(ACCOUNT, authMiddleware, deleteAccount);
 
-router.patch(ACCOUNT, updateAccount);
+router.patch(ACCOUNT, authMiddleware, updateAccount);
 
 export default router;

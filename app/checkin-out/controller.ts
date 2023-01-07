@@ -150,11 +150,10 @@ const getCheckInOutList = async (req: Request, res: Response) => {
 
 const getCheckInOutTimesheet = async (req: Request, res: Response) => {
   try {
-    // const { employeeId } = req.header("user");
+    const { id: employeeId } = res.getHeader("user") as any;
     const checkInOutRecords = await prisma.checkInOut.findMany({
       where: {
-        // employeeId: Number(employeeId),
-        employeeId: 1,
+        employeeId: Number(employeeId),
       },
     });
 
