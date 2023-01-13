@@ -131,3 +131,56 @@ export const WORKING_STATUS = {
     label: "Temporary Layoffs",
   },
 };
+
+export const ASSESSMENT = {
+  failed: {
+    value: 0,
+    label: "Failed",
+  },
+  notGood: {
+    value: 1,
+    lebel: "Not Good",
+  },
+  considering: {
+    value: 2,
+    lebel: "Considering",
+  },
+  good: {
+    value: 3,
+    lebel: "Good",
+  },
+  passed: {
+    value: 4,
+    lebel: "Passed",
+  },
+};
+
+export const TEST_STATUS = {
+  created: {
+    value: 1,
+    label: "Created",
+  },
+  attempting: {
+    value: 2,
+    label: "Attempting",
+  },
+  done: {
+    value: 3,
+    label: "Done",
+  },
+};
+
+export const QUESTION_TYPES = {
+  oneChoice: {
+    value: 1,
+    label: "One choice",
+  },
+  multipleChoice: {
+    value: 2,
+    label: "Multiple choice",
+  },
+  essays: {
+    value: 3,
+    label: "Esaays",
+  },
+};

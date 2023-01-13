@@ -23,12 +23,17 @@ const authMiddleware = (req: Request, res: Response, next: NextFunction) => {
   }
 
   const data = jwt.verify(token, process.env.SECRET_TOKEN as string) as any;
-
   if (data.employee) {
     role = data.employee.role;
   }
 
-  res.setHeader("user", data.employee);
+  if (role === CANDIDATE.value) {
+    res.setHeader("user", data);
+  } else {
+    res.setHeader("user", data.employee);
+  }
+  res.setHeader("email", data.email);
+  res.setHeader("role", role);
 
   if (role === ADMIN.value) {
     // check role admin: prevent set admin role

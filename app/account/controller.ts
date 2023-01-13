@@ -1,7 +1,8 @@
 import bcrypt from "bcrypt";
 import { PASSWORD_SALT_ROUNDS } from "@constants/index";
 import { PrismaClient } from "@prisma/client";
-import { Request, RequestHandler, Response } from "express";
+import e, { Request, RequestHandler, Response } from "express";
+import { sendEmail } from "@config/mailtrap";
 
 const prisma = new PrismaClient();
 
@@ -20,6 +21,12 @@ const getAllAccounts = async (req: Request, res: Response) => {
             middleName: true,
           },
         },
+        candidate: {
+          select: {
+            name: true,
+          },
+        },
+        candidateId: true,
       },
     });
     return res.status(200).send({ allAccounts });
@@ -31,7 +38,26 @@ const getAllAccounts = async (req: Request, res: Response) => {
 const createNewAccount: RequestHandler = async (req, res, next) => {
   try {
     const { data } = req.body;
-    const { email, password, employeeId } = data;
+    const { email, password, employeeId, candidateId } = data || {};
+
+    if (!email || !password) {
+      return res.sendStatus(400);
+    }
+
+    if (candidateId) {
+      const candidate = await prisma.candidate.findUnique({
+        where: {
+          id: candidateId,
+        },
+      });
+      if (candidate) {
+        sendEmail({
+          to: candidate?.email,
+          subject: "New account",
+          text: `Your account is ${email} and password is ${password}`,
+        });
+      }
+    }
 
     const hashPassword = await bcrypt.hash(password, PASSWORD_SALT_ROUNDS);
     await prisma.employeeAccount.create({
@@ -39,26 +65,31 @@ const createNewAccount: RequestHandler = async (req, res, next) => {
         email,
         password: hashPassword,
         employeeId,
+        candidateId,
       },
     });
-    return res.status(200).send({ newAccount: { email } });
+    return res.status(200).send({ email });
   } catch (error) {
+    console.log(error);
     return res.status(400).send({ error });
   }
 };
 
 const updateAccount = async (req: Request, res: Response) => {
   try {
-    const { email = "", employeeId = "" } = req.body.data;
-    if (!employeeId) {
-      throw new Error("Need employeeId");
+    const { data } = req.body;
+    const { email, employeeId, candidateId } = data || {};
+
+    if (!employeeId && !candidateId) {
+      throw new Error("Need employeeId or candidateId");
     }
     await prisma.employeeAccount.update({
       where: {
         email,
       },
       data: {
-        employeeId: Number(employeeId),
+        employeeId,
+        candidateId,
       },
     });
     return res.sendStatus(200);

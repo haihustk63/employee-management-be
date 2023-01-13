@@ -72,31 +72,34 @@ model DeliveryEmployee {
 }
 
 model Candidate {
-  id              Int        @id @default(autoincrement())
-  name            String     @db.VarChar(30)
-  phone           String?    @db.VarChar(10)
-  email           String     @db.VarChar(30)
-  appointmentTime DateTime?  @map("appointment_time")
-  cvLink          String     @map("cv_link")
-  interviewerId   Int?       @map("interviewer_id")
-  interviewer     Employee?  @relation(fields: [interviewerId], references: [id], onDelete: SetNull)
-  assessment      Int?       @default(2)
-  createdAt       DateTime   @default(now())
-  updatedAt       DateTime   @default(now()) @updatedAt
-  skillTest       SkillTest?
-  job             Job?       @relation(fields: [jobId], references: [id], onDelete: SetNull)
+  id              Int              @id @default(autoincrement())
+  name            String           @db.VarChar(30)
+  phone           String?          @db.VarChar(10)
+  email           String           @db.VarChar(30)
+  appointmentTime DateTime?        @map("appointment_time")
+  cvLink          String           @map("cv_link")
+  interviewerId   Int?             @map("interviewer_id")
+  interviewer     Employee?        @relation(fields: [interviewerId], references: [id], onDelete: SetNull)
+  assessment      Int?             @default(2)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @default(now()) @updatedAt
+  job             Job?             @relation(fields: [jobId], references: [id], onDelete: SetNull)
   jobId           Int?
+  employeeAccount EmployeeAccount?
 
   @@map("candidate")
 }
 
 model EmployeeAccount {
-  email      String    @unique
-  password   String
-  employeeId Int?      @unique @map("employee_id")
-  employee   Employee? @relation(fields: [employeeId], references: [id], onDelete: SetNull)
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @default(now()) @updatedAt
+  email            String             @id @unique
+  password         String
+  employeeId       Int?               @unique @map("employee_id")
+  employee         Employee?          @relation(fields: [employeeId], references: [id], onDelete: SetNull)
+  candidateId      Int?               @unique @map("candidate_id")
+  candidate        Candidate?         @relation(fields: [candidateId], references: [id], onDelete: SetNull)
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @default(now()) @updatedAt
+  skillTestAccount SkillTestAccount[]
 
   @@map("employee_account")
 }
@@ -165,19 +168,19 @@ model CheckInOut {
 // REJECTED: 3
 
 model Request {
-  id          Int      @id @default(autoincrement())
-  employeeId  Int      @map("employee_id")
-  employee    Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
-  date        DateTime @default(now())
-  duration    String?
-  reason      String?
-  type        Int      @default(1)
-  status      Int      @default(1)
-  isCancelled Boolean  @default(false)
-  createdAt   DateTime @default(now())
+  id              Int      @id @default(autoincrement())
+  employeeId      Int      @map("employee_id")
+  employee        Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  date            DateTime @db.Date
+  duration        String?
+  reason          String?
+  type            Int      @default(1)
+  status          Int      @default(1)
+  isCancelled     Boolean  @default(false)
+  isAdminReviewed Boolean  @default(false)
+  createdAt DateTime @default(now())
 
-  @@unique([employeeId, date, type])
-  @@map("common_request")
+  @@map("request")
 }
 
 model RecruimentNews {
@@ -236,40 +239,64 @@ model TestTopic {
 // HARD: 3
 
 model TestQuestion {
-  id                Int                 @id @default(autoincrement())
-  questionText      String              @map("question-text")
-  questionSource    Json?               @map("question-source")
-  type              Int                 @default(1)
-  level             Int                 @default(1)
-  options           Json?
-  answer            Json?
-  topicId           Int
-  topic             TestTopic           @relation(references: [id], fields: [topicId])
-  testQuestionTests TestQuestionTests[]
+  id                     Int                      @id @default(autoincrement())
+  questionText           String                   @map("question-text")
+  questionSource         Json?                    @map("question-source")
+  type                   Int                      @default(1)
+  level                  Int                      @default(1)
+  options                Json?
+  answer                 Json?
+  topicId                Int
+  topic                  TestTopic                @relation(references: [id], fields: [topicId])
+  testQuestionSkillTest  TestQuestionSkillTest[]
+  skillTestSessionAnswer SkillTestSessionAnswer[]
 
   @@map("test_question")
 }
 
 model SkillTest {
-  id                Int                 @id @default(autoincrement())
-  candidateId       Int?                @unique @map("candidate_id")
-  candidate         Candidate?          @relation(references: [id], fields: [candidateId])
-  score             Decimal?
-  isSubmitted       Boolean             @default(false) @map("is_submitted")
-  testQuestionTests TestQuestionTests[]
+  id                    Int                     @id @default(autoincrement())
+  title                 String
+  duration              Int                     @default(0)
+  skillTestAccount      SkillTestAccount[]
+  testQuestionSkillTest TestQuestionSkillTest[]
 
   @@map("skill_test")
 }
 
-model TestQuestionTests {
+model SkillTestAccount {
+  id                     Int                      @id @default(autoincrement())
+  email                  String
+  testId                 Int                      @map("test_id")
+  test                   SkillTest                @relation(references: [id], fields: [testId], onDelete: Cascade)
+  account                EmployeeAccount          @relation(fields: [email], references: [email], onDelete: Cascade)
+  score                  Int                      @default(0)
+  status                 Int                      @default(1)
+  skillTestSessionAnswer SkillTestSessionAnswer[]
+
+  @@unique([email, testId])
+  @@map("skill_test_account")
+}
+
+model TestQuestionSkillTest {
   questionId Int          @map("question_id")
   question   TestQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
   testId     Int          @map("test_id")
   test       SkillTest    @relation(references: [id], fields: [testId], onDelete: Cascade)
-  answer     Json?
 
   @@unique([questionId, testId])
-  @@map("test_question_tests")
+  @@map("test_question_skill_test")
+}
+
+model SkillTestSessionAnswer {
+  sessionId   Int              @map("session_id")
+  sensionInfo SkillTestAccount @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  questionId  Int              @map("question_id")
+  question    TestQuestion     @relation(references: [id], fields: [questionId], onDelete: Cascade)
+  answer      Json?
+
+  @@unique([sessionId, questionId])
+  @@map("skill_test_session_answer")
 }
 
 model Job {

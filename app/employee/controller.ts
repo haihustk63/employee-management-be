@@ -206,17 +206,41 @@ const updateEmployeeProfile = async (req: Request, res: Response) => {
         id: Number(employeeId),
       },
       data: profileData,
+      select: {
+        employeeAccount: true,
+      },
     });
 
-    if (email) {
-      await prisma.employeeAccount.update({
-        data: {
-          employeeId: Number(employeeId),
-        },
+    if (updatedEmployeeProfile.employeeAccount?.email !== email) {
+      const accountOfEmail = await prisma.employeeAccount.findUnique({
         where: {
           email,
         },
       });
+      if (accountOfEmail?.employeeId) {
+        if (accountOfEmail?.employeeId !== Number(employeeId)) {
+          return res
+            .status(400)
+            .send({ message: "This account has been assigned to a employee" });
+        }
+      } else {
+        await prisma.employeeAccount.update({
+          where: {
+            email: updatedEmployeeProfile.employeeAccount?.email,
+          },
+          data: {
+            employeeId: null,
+          },
+        });
+        await prisma.employeeAccount.update({
+          where: {
+            email,
+          },
+          data: {
+            employeeId: Number(employeeId),
+          },
+        });
+      }
     }
 
     // Check if deliveryId is sent

@@ -1,6 +1,11 @@
-import { sendEmail } from "@config/mailtrap";
 import { PrismaClient } from "@prisma/client";
-import { Request, Response } from "express";
+import { Request, RequestHandler, Response } from "express";
+import { sendEmail } from "@config/mailtrap";
+import { ROLES, TEST_STATUS, QUESTION_TYPES } from "@constants/common";
+
+const { CANDIDATE, EMPLOYEE, DIVISION_MANAGER, ADMIN, SUPER_ADMIN } = ROLES;
+const { created, attempting, done } = TEST_STATUS;
+const { essays, multipleChoice, oneChoice } = QUESTION_TYPES;
 
 const prisma = new PrismaClient();
 
@@ -25,7 +30,7 @@ const createTestRandom = async (req: Request, res: Response) => {
       (r) =>
         prisma.$queryRaw`
           SELECT id, \`question-text\` AS questionText, \`question-source\` AS questionSource, options, \`type\`, answer 
-          FROM testQuestion tq
+          FROM test_question tq
           WHERE tq.topicId = ${r.topicId} and tq.level = ${r.level}
           ORDER BY RAND() LIMIT ${r.amount}
           `
@@ -61,19 +66,20 @@ const createTest = async (req: Request, res: Response) => {
 const saveTest = async (req: Request, res: Response) => {
   try {
     const { data } = req.body;
-    const { questionIds, candidateId } = data;
-    await prisma.skillTest.create({
+    const { questionIds, title, duration } = data;
+    const newTest = await prisma.skillTest.create({
       data: {
-        candidateId: Number(candidateId),
-
-        testQuestionTests: {
+        title,
+        duration,
+        testQuestionSkillTest: {
           create: questionIds.map((id: number) => ({
             questionId: id,
           })),
         },
       },
     });
-    return res.sendStatus(200);
+
+    return res.status(201).send(newTest);
   } catch (error: any) {
     return res.sendStatus(400);
   }
@@ -82,11 +88,14 @@ const saveTest = async (req: Request, res: Response) => {
 const updateTest = async (req: Request, res: Response) => {
   try {
     const { data } = req.body;
-    const { questionIds, testId } = data;
+    const { testId: id } = req.params;
+    const { questionIds, title, duration } = data;
 
-    const questions = await prisma.testQuestionTests.findMany({
+    const testId = Number(id);
+
+    const questions = await prisma.testQuestionSkillTest.findMany({
       where: {
-        testId: Number(testId),
+        testId: testId,
       },
     });
 
@@ -101,25 +110,36 @@ const updateTest = async (req: Request, res: Response) => {
       (id: number) => !questionIds.includes(id)
     );
 
-    const removeRecords = prisma.testQuestionTests.deleteMany({
+    const removeRecords = prisma.testQuestionSkillTest.deleteMany({
       where: {
-        testId: {
+        questionId: {
           in: removeIds,
         },
       },
     });
 
-    const addRecords = prisma.testQuestionTests.createMany({
+    const addRecords = prisma.testQuestionSkillTest.createMany({
       data: newIds?.map((id: number) => ({
-        testId: Number(testId),
+        testId,
         questionId: id,
       })),
     });
 
-    await prisma.$transaction([removeRecords, addRecords]);
+    const updateTestInfo = prisma.skillTest.update({
+      where: {
+        id: testId,
+      },
+      data: {
+        title,
+        duration,
+      },
+    });
+
+    await prisma.$transaction([updateTestInfo, removeRecords, addRecords]);
 
     return res.sendStatus(200);
   } catch (error: any) {
+    console.log(error.message);
     return res.sendStatus(400);
   }
 };
@@ -127,19 +147,28 @@ const updateTest = async (req: Request, res: Response) => {
 const getTest = async (req: Request, res: Response) => {
   try {
     const { testId } = req.params;
-    const test = await prisma.testQuestionTests.findMany({
+    const test = await prisma.skillTest.findUnique({
       where: {
-        testId: Number(testId),
+        id: Number(testId),
       },
       include: {
-        question: {
-          include: {
-            topic: true,
+        testQuestionSkillTest: {
+          select: {
+            question: {
+              include: {
+                topic: {
+                  select: {
+                    name: true,
+                  },
+                },
+              },
+            },
+            questionId: true,
           },
         },
-        test: {
+        skillTestAccount: {
           select: {
-            isSubmitted: true,
+            status: true,
           },
         },
       },
@@ -151,131 +180,350 @@ const getTest = async (req: Request, res: Response) => {
   }
 };
 
-const getTestSubmitStatus = async (req: Request, res: Response) => {
+const getAllTests = async (req: Request, res: Response) => {
   try {
-    const { testId } = req.params;
-    const test = await prisma.skillTest.findUnique({
-      where: {
-        id: Number(testId),
+    const tests = await prisma.skillTest.findMany({
+      include: {
+        testQuestionSkillTest: true,
+        skillTestAccount: true,
       },
-      select: {
-        isSubmitted: true,
-        score: true,
-        testQuestionTests: {
+    });
+    return res.status(200).send({ tests });
+  } catch (error) {
+    return res.sendStatus(400);
+  }
+};
+
+const getContestantTests = async (req: Request, res: Response) => {
+  try {
+    const email = res.getHeader("email") as any;
+    const tests = await prisma.skillTestAccount.findMany({
+      where: {
+        email,
+      },
+      include: {
+        test: true,
+        skillTestSessionAnswer: true,
+      },
+    });
+    return res.status(200).send({ tests });
+  } catch (error) {
+    return res.sendStatus(400);
+  }
+};
+
+const getContestantTest = async (req: Request, res: Response) => {
+  try {
+    const { testId: id } = req.params;
+    const email = res.getHeader("email") as any;
+    const role = res.getHeader("role") as any;
+    const testId = Number(id);
+
+    const includeAnswer = role === CANDIDATE.value ? false : true;
+
+    const test = await prisma.skillTestAccount.findUnique({
+      where: {
+        id: testId,
+      },
+      include: {
+        test: {
+          include: {
+            testQuestionSkillTest: {
+              include: {
+                question: {
+                  select: {
+                    options: true,
+                    questionSource: true,
+                    questionText: true,
+                    type: true,
+                    answer: includeAnswer,
+                  },
+                },
+              },
+            },
+          },
+        },
+        skillTestSessionAnswer: {
+          include: {
+            question: true,
+          },
+        },
+        account: {
           select: {
-            question: {
+            candidate: {
               select: {
-                type: true,
+                email: true,
+                name: true,
+                job: {
+                  select: {
+                    title: true,
+                  },
+                },
+              },
+            },
+            employee: {
+              select: {
+                firstName: true,
+                middleName: true,
+                lastName: true,
+                position: {
+                  select: {
+                    name: true,
+                  },
+                },
+                deliveryEmployee: {
+                  select: {
+                    delivery: {
+                      select: {
+                        name: true,
+                      },
+                    },
+                  },
+                },
               },
             },
           },
         },
       },
     });
-    const questionCount = test?.testQuestionTests.length;
-    const essayCount = test?.testQuestionTests.filter(
-      (question: any) => question.question.type === "ESSAYS"
-    ).length;
-    const isSubmitted = test?.isSubmitted;
-    return res.status(200).send({ isSubmitted, questionCount, essayCount });
+
+    if (role === CANDIDATE.value) {
+      if (test?.email !== email) {
+        return res.sendStatus(403);
+      } else {
+        if (test?.status === created.value) {
+          const responseData: any = {
+            id: test.id,
+            email: test.email,
+            status: test.status,
+          };
+          return res.status(200).send(responseData);
+        }
+
+        if (test?.status === done.value) {
+          const questionCount = test.test.testQuestionSkillTest.length;
+          const essayCount = test.test.testQuestionSkillTest.filter(
+            (item) => item.question.type === essays.value
+          )?.length;
+          const responseData: any = {
+            status: test.status,
+            score: test.score,
+            email: test.account.candidate?.email,
+            questionCount,
+            essayCount,
+          };
+          return res.status(200).send(responseData);
+        }
+      }
+    }
+
+    if (role === EMPLOYEE.value || role === DIVISION_MANAGER.value) {
+      if (test?.email !== email) {
+        return res.sendStatus(403);
+      }
+    }
+
+    return res.status(200).send(test);
   } catch (error) {
     return res.sendStatus(400);
   }
 };
 
-const getAllTests = async (req: Request, res: Response) => {
-  try {
-    const tests = await prisma.skillTest.findMany({
-      include: {
-        candidate: {
-          select: {
-            name: true,
-          },
-        },
-        testQuestionTests: true,
+const assignContestantTest: RequestHandler = async (req, res, next) => {
+  const { email, testId } = req.body.data || {};
+  console.log(email, testId);
+
+  if (!email || !testId) {
+    return res.sendStatus(400);
+  }
+
+  const currentTest = await prisma.skillTestAccount.findUnique({
+    where: {
+      email_testId: {
+        testId,
+        email,
+      },
+    },
+  });
+
+  if (!currentTest || currentTest?.status === created.value) {
+    await prisma.skillTestAccount.deleteMany({
+      where: {
+        email,
+        status: created.value,
       },
     });
-    const resTests = tests?.map((test: any) => ({
-      id: test.id,
-      candidateId: test.candidateId,
-      score: test.score,
-      isSubmitted: test.isSubmitted,
-      candidate: test.candidate,
-      countQuestion: test.testQuestionTests?.length,
-    }));
-    return res.status(200).send({ tests: resTests });
+
+    await prisma.skillTestAccount.create({
+      data: {
+        testId,
+        email,
+      },
+    });
+
+    return res.sendStatus(201);
+  }
+
+  if (currentTest?.status === attempting.value) {
+    return res
+      .status(400)
+      .send({ message: "The candidate is currently attempting" });
+  }
+
+  if (currentTest?.status === done.value) {
+    return res
+      .status(400)
+      .send({ message: "The candidate has done this test" });
+  }
+};
+
+const updateContestantTest = async (req: Request, res: Response) => {
+  try {
+    const { confirmAttempt } = req.body.data || {};
+    const { testId: id } = req.params;
+    const email = res.getHeader("email") as any;
+
+    const testId = Number(id);
+
+    const testAccount = await prisma.skillTestAccount.findUnique({
+      where: {
+        id: testId,
+      },
+    });
+
+    if (testAccount?.email !== email) {
+      throw new Error("Not have the right");
+    }
+
+    if (confirmAttempt && testAccount?.status === created.value) {
+      const updatedTest = await prisma.skillTestAccount.update({
+        where: {
+          id: testId,
+        },
+        data: {
+          status: attempting.value,
+        },
+        include: {
+          test: {
+            select: {
+              duration: true,
+            },
+          },
+        },
+      });
+
+      const countdownTime = updatedTest.test.duration * 60 + 30;
+      const timeout = setTimeout(() => {
+        updateTestStatusJob(testId);
+        clearTimeout(timeout);
+      }, countdownTime * 1000);
+      // const job = createJob(countdownTime, updateTestStatusJob(testId));
+    }
+    return res.sendStatus(200);
   } catch (error) {
     return res.sendStatus(400);
+  }
+};
+
+const updateTestStatusJob = async (testId: number) => {
+  const testAccount = await prisma.skillTestAccount.findUnique({
+    where: {
+      id: testId,
+    },
+  });
+
+  const currentStatus = testAccount?.status;
+  if (currentStatus !== done.value) {
+    await prisma.skillTestAccount.update({
+      where: {
+        id: testId,
+      },
+      data: {
+        status: done.value,
+      },
+    });
   }
 };
 
 const submitTest = async (req: Request, res: Response) => {
   try {
-    const { data: answers } = req.body;
-    const { testId } = req.params;
-    const candidate = res.getHeader("user") as any;
+    const { testId, answers } = req.body.data;
+    let score = 0;
+    let email = res.getHeader("email") as any;
+    const role = res.getHeader("role");
 
-    const updateQueries = answers.map((answer: any) => {
-      return prisma.testQuestionTests.update({
-        where: {
-          questionId_testId: {
-            testId: Number(testId),
-            questionId: answer.questionId,
-          },
-        },
-        data: {
-          answer: answer.answer,
-        },
-      });
+    const currentTest = await prisma.skillTestAccount.findUnique({
+      where: {
+        id: testId,
+      },
     });
 
-    await prisma.$transaction(updateQueries);
+    if (currentTest?.email !== email) {
+      return res.sendStatus(403);
+    }
 
-    const score = await prisma.testQuestionTests
-      .findMany({
-        where: {
-          testId: Number(testId),
-        },
-        select: {
-          answer: true,
-          question: {
-            select: {
-              answer: true,
-            },
-          },
-        },
-      })
-      .then((data: any[]) => {
-        let score = 0;
-        data.map((item: any) => {
-          if (item.question.answer) {
-            if (
-              JSON.stringify(item.answer) ===
-              JSON.stringify(item.question.answer)
-            ) {
-              score += 1;
-            }
-          }
-        });
-        return score;
-      });
+    const validAnswer = answers?.every(
+      (answer: any) => answer.sessionId === testId
+    );
 
-    await prisma.skillTest.update({
+    if (!validAnswer) {
+      return res.sendStatus(400);
+    }
+
+    if (currentTest?.status === done.value) {
+      return res.sendStatus(400);
+    }
+
+    await prisma.skillTestSessionAnswer.createMany({
+      data: answers,
+    });
+
+    const submittedAnswers = await prisma.skillTestSessionAnswer.findMany({
       where: {
-        id: Number(testId),
+        sessionId: testId,
+      },
+      include: {
+        question: true,
+      },
+    });
+
+    submittedAnswers.forEach((item) => {
+      if (item.question.type !== essays.value) {
+        const rightAnswer = item.question.answer;
+        const userAnswer = item.answer;
+        if (JSON.stringify(rightAnswer) === JSON.stringify(userAnswer)) {
+          score += 1;
+        }
+      }
+    });
+
+    await prisma.skillTestAccount.update({
+      where: {
+        id: testId,
       },
       data: {
-        isSubmitted: true,
         score,
+        status: done.value,
       },
     });
 
+    if (role === CANDIDATE.value) {
+      const account = await prisma.employeeAccount.findUnique({
+        where: {
+          email,
+        },
+        include: {
+          candidate: true,
+        },
+      });
+      email = account?.candidate?.email;
+    }
+
     await sendEmail({
-      to: candidate.email,
+      to: email,
       subject: "You have submitted the test successfully",
       text: "Congratulations! You have successfully submitted the test!",
     });
-
     return res.status(200).send("OK");
   } catch (error: any) {
     console.log(error);
@@ -290,6 +538,9 @@ export {
   getTest,
   submitTest,
   getAllTests,
-  getTestSubmitStatus,
-  updateTest
+  updateTest,
+  getContestantTests,
+  updateContestantTest,
+  getContestantTest,
+  assignContestantTest,
 };

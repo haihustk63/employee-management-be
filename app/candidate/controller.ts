@@ -2,6 +2,11 @@ import { sendEmail } from "@config/mailtrap";
 import { PrismaClient } from "@prisma/client";
 import { Request, Response } from "express";
 
+import { ASSESSMENT, TEST_STATUS } from "@constants/common";
+
+const { considering, failed, good, notGood, passed } = ASSESSMENT;
+const { attempting, created, done } = TEST_STATUS;
+
 const prisma = new PrismaClient();
 
 const createNewApplication = async (req: Request, res: Response) => {
@@ -20,6 +25,22 @@ const getAllApplications = async (req: Request, res: Response) => {
       include: {
         job: true,
         interviewer: true,
+        employeeAccount: {
+          select: {
+            email: true,
+            employeeId: true,
+            candidateId: true,
+            skillTestAccount: {
+              include: {
+                test: {
+                  select: {
+                    title: true,
+                  },
+                },
+              },
+            },
+          },
+        },
       },
     });
     return res.status(200).send({ allApplications });
@@ -31,16 +52,50 @@ const getAllApplications = async (req: Request, res: Response) => {
 const updateApplication = async (req: Request, res: Response) => {
   try {
     const { data } = req.body;
+    const { assessment, ...rest } = data || {};
     const { candidateId } = req.params;
+
+    const candidate = await prisma.candidate.findUnique({
+      where: {
+        id: Number(candidateId),
+      },
+      include: {
+        employeeAccount: {
+          select: {
+            employeeId: true,
+          },
+        },
+      },
+    });
+
+    if (candidate?.employeeAccount?.employeeId) {
+      throw new Error("This candidate has became official employee");
+    }
+
+    if (
+      candidate?.assessment === failed.value ||
+      candidate?.assessment === passed.value
+    ) {
+      throw new Error("This candidate has passed or failed");
+    }
 
     const updatedApplication = await prisma.candidate.update({
       where: {
         id: Number(candidateId),
       },
-      data,
+      data: { assessment, ...rest },
+      select: {
+        employeeAccount: {
+          select: {
+            email: true,
+            employeeId: true,
+            candidateId: true,
+          },
+        },
+      },
     });
 
-    if (data.assessment === 0 || data.assessment === 4) {
+    if (assessment === failed.value || assessment === passed.value) {
       const candidate = await prisma.candidate.findUnique({
         where: {
           id: Number(candidateId),
@@ -49,7 +104,7 @@ const updateApplication = async (req: Request, res: Response) => {
 
       if (candidate) {
         const email = candidate.email;
-        if (data.assessment === 0) {
+        if (assessment === failed.value) {
           sendEmail({
             to: email,
             subject: "Sorry",
@@ -67,8 +122,7 @@ const updateApplication = async (req: Request, res: Response) => {
 
     return res.status(200).send({ updatedApplication });
   } catch (error: any) {
-    console.log(error);
-    return res.status(400).send({ error });
+    return res.status(400).send(error.message);
   }
 };
 

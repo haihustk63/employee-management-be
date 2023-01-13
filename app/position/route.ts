@@ -12,7 +12,7 @@ const { POSITION, POSITION_MODIFY } = ROUTES;
 
 const router = Router();
 
-router.get(POSITION, authMiddleware, getAllPositions);
+router.get(POSITION, getAllPositions);
 
 router.post(POSITION, authMiddleware, createNewPosition);
 

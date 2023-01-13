@@ -24,7 +24,9 @@ export const BASE_URLS = {
 
   // tests
   TEST: "/tests",
+  CONTESTANT_TEST: "/contestant-tests",
   CREATE_TEST: "/create-tests",
+  SUBMIT_TEST: "/submit-test",
 
   // check in - out
   CHECK_IN_OUT: "/check-in-out",
@@ -77,6 +79,9 @@ export const ROUTES = {
   CREATE_TEST_RANDOM: `${BASE_URLS.TEST}/create/random`,
   CREATE_TEST_MANUAL: `${BASE_URLS.TEST}/create/manual`,
   SAVE_TEST: BASE_URLS.TEST,
+  CONTESTANT_TEST: BASE_URLS.CONTESTANT_TEST,
+  CONTESTANT_TEST_MODIFY: `${BASE_URLS.CONTESTANT_TEST}/:testId`,
+  SUBMIT_TEST: BASE_URLS.SUBMIT_TEST,
 
   // check in out
   CHECK_IN_OUT: BASE_URLS.CHECK_IN_OUT,
@@ -103,6 +108,9 @@ const routeCandidate = {
   [ROUTES.LOGOUT]: ["POST"],
   [ROUTES.TEST_MODIFY]: ["GET", "POST"],
   [ROUTES.TEST_STATUS]: ["GET"],
+  [ROUTES.CONTESTANT_TEST]: ["GET"],
+  [ROUTES.CONTESTANT_TEST_MODIFY]: ["GET", "PATCH"],
+  [ROUTES.SUBMIT_TEST]: ["POST"],
 };
 
 const routeEmployee = {
@@ -115,6 +123,9 @@ const routeEmployee = {
   [ROUTES.EDUCATION_PROGRAMS]: ["GET"],
   [ROUTES.EDUCATION_PROGRAMS_JOIN]: ["POST"],
   [ROUTES.LOGOUT]: ["POST"],
+  [ROUTES.CONTESTANT_TEST]: ["GET"],
+  [ROUTES.CONTESTANT_TEST_MODIFY]: ["GET", "PATCH"],
+  [ROUTES.SUBMIT_TEST]: ["POST"],
 };
 
 const routeDivisionManager = {

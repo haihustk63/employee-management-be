@@ -163,8 +163,8 @@ const getCheckInOutTimesheet = async (req: Request, res: Response) => {
       },
     });
 
-    const checkInOutByQuery = getRecordsByQuery(req, checkInOutRecords);
-    const requestByQuery = getRecordsByQuery(req, requestsRecords);
+    const checkInOutByQuery = getRecordsByQuery(req.query, checkInOutRecords);
+    const requestByQuery = getRecordsByQuery(req.query, requestsRecords);
     const readableCheckInOut = getReadableInfo(checkInOutByQuery);
     const filteredLeaveRequests = filterLeaveRequest(requestByQuery);
     const groupData = createGroupInfoByDay(
@@ -180,11 +180,11 @@ const getCheckInOutTimesheet = async (req: Request, res: Response) => {
   }
 };
 
-const getRecordsByQuery = (req: Request, records: any[]) => {
+const getRecordsByQuery = (query: any, records: any[]) => {
   const currentDate = new Date();
   const currentMonth = currentDate.getMonth();
   const currentYear = currentDate.getFullYear();
-  const { month = currentMonth, year = currentYear } = req.query;
+  const { month = currentMonth, year = currentYear } = query;
 
   return records.filter((record: any) => {
     const date = new Date(record.time ?? record.date);
