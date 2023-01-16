@@ -145,6 +145,7 @@ model Device {
 
 // 0 - check in, 1- check out
 model CheckInOut {
+  id         Int      @id @default(autoincrement())
   employeeId Int      @map("employee_id")
   employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
   time       DateTime @default(now())
@@ -178,7 +179,7 @@ model Request {
   status          Int      @default(1)
   isCancelled     Boolean  @default(false)
   isAdminReviewed Boolean  @default(false)
-  createdAt DateTime @default(now())
+  createdAt       DateTime @default(now())
 
   @@map("request")
 }
@@ -194,15 +195,16 @@ model RecruimentNews {
 }
 
 model EducationProgram {
-  id          Int                 @id @default(autoincrement())
-  title       String
-  content     String?
-  maxSlot     Int?                @map("max_slot")
-  time        DateTime?
-  averageRate Int                 @default(5) @map("average_rate")
-  employees   EmployeeEducation[]
-  createdAt   DateTime            @default(now())
-  updatedAt   DateTime            @default(now()) @updatedAt
+  id        Int                 @id @default(autoincrement())
+  title     String
+  content   String?             @db.LongText
+  time      DateTime?
+  duration  Int                 @default(30)
+  completed Boolean             @default(false)
+  materials Json?
+  employees EmployeeEducation[]
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @default(now()) @updatedAt
 
   @@map("education_program")
 }
@@ -214,7 +216,6 @@ model EmployeeEducation {
   program    EducationProgram @relation(fields: [programId], references: [id], onDelete: Cascade)
   isTutor    Boolean          @default(false) @map("is_tutor")
   rate       Int?
-  confirm    Boolean?         @default(false)
   createdAt  DateTime         @default(now())
 
   @@unique([employeeId, programId])
@@ -240,13 +241,13 @@ model TestTopic {
 
 model TestQuestion {
   id                     Int                      @id @default(autoincrement())
-  questionText           String                   @map("question-text")
-  questionSource         Json?                    @map("question-source")
+  questionText           String                   @map("question_text")
+  questionSource         Json?                    @map("question_source")
   type                   Int                      @default(1)
   level                  Int                      @default(1)
   options                Json?
   answer                 Json?
-  topicId                Int
+  topicId                Int                      @map("topic_id")
   topic                  TestTopic                @relation(references: [id], fields: [topicId])
   testQuestionSkillTest  TestQuestionSkillTest[]
   skillTestSessionAnswer SkillTestSessionAnswer[]

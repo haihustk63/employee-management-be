@@ -29,9 +29,9 @@ const createTestRandom = async (req: Request, res: Response) => {
     const reqPromises = transformInfoFilter.map(
       (r) =>
         prisma.$queryRaw`
-          SELECT id, \`question-text\` AS questionText, \`question-source\` AS questionSource, options, \`type\`, answer 
+          SELECT id, question_text AS questionText, question_source AS questionSource, options, \`type\`, answer 
           FROM test_question tq
-          WHERE tq.topicId = ${r.topicId} and tq.level = ${r.level}
+          WHERE tq.topic_id = ${r.topicId} and tq.level = ${r.level}
           ORDER BY RAND() LIMIT ${r.amount}
           `
     );

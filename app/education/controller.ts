@@ -1,13 +1,13 @@
-import { sendEmail } from "@config/mailtrap";
-import { PrismaClient, Prisma } from "@prisma/client";
-import { NextFunction, Request, RequestHandler, Response } from "express";
+import { PrismaClient } from "@prisma/client";
+import dayjs from "dayjs";
+import { RequestHandler } from "express";
 
 const prisma = new PrismaClient();
 
 const createEducationProgram: RequestHandler = async (req, res, next) => {
   try {
     const { data } = req.body;
-    const { tutorId = "", ...rest } = data;
+    const { tutorId = "", ...rest } = data || {};
     const newProgram = await prisma.educationProgram.create({
       data: rest,
     });
@@ -34,7 +34,7 @@ const getAllEducationPrograms: RequestHandler = async (req, res, next) => {
         employees: {
           select: {
             isTutor: true,
-            confirm: true,
+            rate: true,
             employee: {
               select: {
                 id: true,
@@ -48,14 +48,7 @@ const getAllEducationPrograms: RequestHandler = async (req, res, next) => {
       },
     });
 
-    const resPrograms = programs?.map((item: any) => {
-      const { employees, ...rest } = item;
-      const tutor = employees?.find(
-        (employee: any) => employee.isTutor
-      )?.employee;
-
-      return { employees, tutor, ...rest };
-    });
+    const resPrograms = handlePrograms(programs);
 
     return res.status(200).send({ allPrograms: resPrograms });
   } catch (err) {
@@ -63,9 +56,77 @@ const getAllEducationPrograms: RequestHandler = async (req, res, next) => {
   }
 };
 
+const getMyEducationPrograms: RequestHandler = async (req, res, next) => {
+  try {
+    const { id: employeeId } = res.getHeader("user") as any;
+    const records = await prisma.employeeEducation.findMany({
+      where: {
+        employeeId,
+      },
+      include: {
+        program: {
+          include: {
+            employees: {
+              select: {
+                isTutor: true,
+                rate: true,
+                employee: {
+                  select: {
+                    id: true,
+                    firstName: true,
+                    lastName: true,
+                    middleName: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    const myPrograms = records.map((record) => record.program);
+    const resPrograms = handlePrograms(myPrograms);
+
+    return res.status(200).send({ allPrograms: resPrograms });
+  } catch (err) {
+    next(err);
+  }
+};
+
+const handlePrograms = (programs: any[]) => {
+  return programs?.map((item: any) => {
+    const { employees, time, duration, ...rest } = item;
+    const tutor = employees?.find(
+      (employee: any) => employee.isTutor
+    )?.employee;
+    const averageRate = calculateAverageRate(employees);
+    const endTime = dayjs(time).add(duration, "minutes");
+    return { employees, tutor, time, duration, endTime, averageRate, ...rest };
+  });
+};
+
+const calculateAverageRate = (employees: any[]) => {
+  let totalTurns = 0;
+  let totalStars = 0;
+  employees.forEach((employee) => {
+    const { rate } = employee;
+    if (rate !== null) {
+      totalStars += employee.rate;
+      totalTurns += 1;
+    }
+  });
+
+  return !totalTurns ? 5 : totalStars / totalTurns;
+};
+
 const getEducationProgramById: RequestHandler = async (req, res, next) => {
   try {
     const { programId } = req.params;
+    if (!programId) {
+      return res.sendStatus(400);
+    }
+
     const program = await prisma.educationProgram.findUnique({
       where: {
         id: Number(programId),
@@ -74,7 +135,7 @@ const getEducationProgramById: RequestHandler = async (req, res, next) => {
         employees: {
           select: {
             isTutor: true,
-            confirm: true,
+            rate: true,
             employee: {
               select: {
                 id: true,
@@ -112,33 +173,28 @@ const updateEducationProgram: RequestHandler = async (req, res, next) => {
       data: rest,
     });
 
-    const employee = await prisma.employeeEducation.findUnique({
+    const programTutor = await prisma.employeeEducation.findFirst({
       where: {
-        employeeId_programId: {
-          programId: Number(programId),
-          employeeId: tutorId,
-        },
+        programId: Number(programId),
+        isTutor: true,
       },
     });
 
-    if (!employee?.isTutor) {
-      const deleteNotConfirmTutor = prisma.$queryRaw`
-      DELETE FROM employee_education
-      WHERE program_id=${programId}
-      AND is_tutor=true
-      AND confirm=false
-      `;
-
-      const updateIsTutor = prisma.employeeEducation.updateMany({
+    if (tutorId !== programTutor?.employeeId) {
+      await prisma.employeeEducation.deleteMany({
         where: {
           programId: Number(programId),
-        },
-        data: {
-          isTutor: false,
+          isTutor: true,
         },
       });
 
-      const upsertNewTutor = prisma.employeeEducation.upsert({
+      await prisma.employeeEducation.upsert({
+        where: {
+          employeeId_programId: {
+            programId: Number(programId),
+            employeeId: tutorId,
+          },
+        },
         create: {
           programId: Number(programId),
           employeeId: tutorId,
@@ -147,19 +203,7 @@ const updateEducationProgram: RequestHandler = async (req, res, next) => {
         update: {
           isTutor: true,
         },
-        where: {
-          employeeId_programId: {
-            programId: Number(programId),
-            employeeId: tutorId,
-          },
-        },
       });
-
-      await prisma.$transaction([
-        deleteNotConfirmTutor,
-        updateIsTutor,
-        upsertNewTutor,
-      ]);
     }
 
     return res.status(200).send(updatedProgram);
@@ -188,14 +232,22 @@ const joinEducationProgram: RequestHandler = async (req, res, next) => {
   try {
     const { data } = req.body;
     const { programId } = data;
+    const { id: employeeId } = res.getHeader("user") as any;
 
-    const employeeId = 16;
+    const program = await prisma.educationProgram.findUnique({
+      where: {
+        id: programId,
+      },
+    });
+
+    if (dayjs(program?.time).isBefore(Date.now())) {
+      return res.sendStatus(400).send({ message: "Time to join is end" });
+    }
 
     const record = await prisma.employeeEducation.create({
       data: {
         employeeId,
         programId,
-        confirm: true,
       },
     });
 
@@ -209,8 +261,7 @@ const unJoinEducationProgram: RequestHandler = async (req, res, next) => {
   try {
     const { data } = req.body;
     const { programId } = data;
-
-    const employeeId = 16;
+    const { id: employeeId } = res.getHeader("user") as any;
 
     await prisma.employeeEducation.delete({
       where: {
@@ -227,12 +278,62 @@ const unJoinEducationProgram: RequestHandler = async (req, res, next) => {
   }
 };
 
+const rateEducationProgram: RequestHandler = async (req, res, next) => {
+  try {
+    const { data } = req.body;
+    const { programId, rate } = data;
+    const { id: employeeId } = res.getHeader("user") as any;
+
+    const record = await prisma.employeeEducation.findUnique({
+      where: {
+        employeeId_programId: {
+          employeeId,
+          programId,
+        },
+      },
+      include: {
+        program: true,
+      },
+    });
+
+    if (!record || typeof rate !== "number" || (rate * 10) % 5 !== 0) {
+      return res.sendStatus(400);
+    }
+
+    const endTime = dayjs(record.program.time).add(record.program.duration);
+    const canRate = endTime.isBefore(Date.now());
+
+    if (canRate) {
+      await prisma.employeeEducation.update({
+        where: {
+          employeeId_programId: {
+            employeeId,
+            programId,
+          },
+        },
+        data: {
+          rate,
+        },
+      });
+
+      return res.sendStatus(200);
+    }
+    return res
+      .status(400)
+      .send({ message: "This program has not finished yet" });
+  } catch (err) {
+    next(err);
+  }
+};
+
 export {
   createEducationProgram,
   getAllEducationPrograms,
+  getMyEducationPrograms,
   getEducationProgramById,
   updateEducationProgram,
   deleteEducationProgram,
   joinEducationProgram,
   unJoinEducationProgram,
+  rateEducationProgram,
 };

@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { PrismaClient } from "@prisma/client";
+import { Prisma, PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
@@ -59,33 +59,21 @@ const getAllTestQuestions = async (req: Request, res: Response) => {
   try {
     const { keyword = "", topic, level, type } = req.query;
 
-    const allTestQuestions = await prisma.testQuestion.findMany({
-      where: {
-        AND: [
-          {
-            AND: [
-              {
-                type: type as any,
-              },
-              {
-                level: level as any,
-              },
-              {
-                questionText: {
-                  contains: keyword as string,
-                },
-              },
-            ],
-          },
-          {
-            topicId: topic ? Number(topic) : undefined,
-          },
-        ],
-      },
-      include: {
-        topic: true,
-      },
-    });
+    const allTestQuestions = await prisma.$queryRaw`
+    SELECT tq.id, tq.question_text as questionText, tq.question_source as questionSource, 
+    tq.type, tq.level, tq.options, tq.answer, tt.name as topicName, tt.description as topicDescription
+    FROM test_question as tq INNER JOIN test_topic as tt
+    ON tq.topic_id = tt.id
+    WHERE 1
+    ${
+      keyword
+        ? Prisma.sql`AND question_text LIKE ${`%${keyword}%`}`
+        : Prisma.empty
+    }
+    ${topic ? Prisma.sql`AND topic_id=${topic}` : Prisma.empty}
+    ${level ? Prisma.sql`AND level=${level}` : Prisma.empty}
+    ${type ? Prisma.sql`AND type=${type}` : Prisma.empty}
+  `;
 
     return res.status(200).send({ allTestQuestions });
   } catch (error: any) {

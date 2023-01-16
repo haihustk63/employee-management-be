@@ -184,3 +184,14 @@ export const QUESTION_TYPES = {
     label: "Esaays",
   },
 };
+
+export const CHECK_IN_OUT_TYPE = {
+  checkin: {
+    value: 0,
+    label: "Check in",
+  },
+  checkout: {
+    value: 1,
+    label: "Check out",
+  },
+};

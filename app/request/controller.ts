@@ -1,37 +1,45 @@
 import { Request, Response } from "express";
 import { PrismaClient } from "@prisma/client";
-import { ROLES } from "@constants/common";
+import { CHECK_IN_OUT_TYPE, ROLES } from "@constants/common";
 import { REQUEST_STATUS } from "@constants/common";
-import dayjs from "dayjs";
+import dayjs, { Dayjs } from "dayjs";
+import { REQUEST_TYPES } from "@constants/common";
 
 const { ADMIN, SUPER_ADMIN, DIVISION_MANAGER, EMPLOYEE } = ROLES;
-const { ACCEPTED, PENDING, REJECTED } = REQUEST_STATUS;
+const leavingTypes = [
+  REQUEST_TYPES.ANNUAL_AFTERNOON_LEAVE.value,
+  REQUEST_TYPES.ANNUAL_LEAVE.value,
+  REQUEST_TYPES.ANNUAL_MORNING_LEAVE.value,
+  REQUEST_TYPES.UNPAID_MORNING_LEAVE.value,
+  REQUEST_TYPES.UNPAID_AFTERNOON_LEAVE.value,
+  REQUEST_TYPES.UNPAID_LEAVE.value,
+];
+
+const checkInOutTypes = [
+  REQUEST_TYPES.MODIFY_CHECKIN.value,
+  REQUEST_TYPES.MODIFY_CHECKOUT.value,
+];
 
 const prisma = new PrismaClient();
+
+const undefinedItem = "X";
 
 const createNewRequest = async (req: Request, res: Response) => {
   try {
     const { data } = req.body;
-    const { date } = data;
+    const { date, type } = data;
     const { id: employeeId } = res.getHeader("user") as any;
 
-    const pendingRequest = await prisma.request.findMany({
-      where: {
-        employeeId,
-        status: PENDING.value,
-      },
+    const hasSameTypeRequest = await checkSameTypeRequest({
+      employeeId,
+      type,
+      date,
     });
-
-    const dateHasPendingRequest = pendingRequest.some((request) => {
-      const requestDate = dayjs(request.date).format("dd/MM/YYYY");
-      const newRequestDate = dayjs(date).format("dd/MM/YYYY");
-      return requestDate === newRequestDate;
-    });
-
-    if (dateHasPendingRequest) {
-      return res
-        .status(400)
-        .send({ message: "You have a pending request today" });
+    if (hasSameTypeRequest) {
+      return res.status(400).send({
+        message:
+          "There is another same request on that day. Please cancel it before create a new one",
+      });
     }
 
     const newRequest = await prisma.request.create({
@@ -41,11 +49,45 @@ const createNewRequest = async (req: Request, res: Response) => {
       },
     });
 
-    return res.status(200).send({ newRequest });
+    return res.status(200).send(newRequest);
   } catch (error: any) {
     console.log(error);
     return res.sendStatus(400);
   }
+};
+
+const checkSameTypeRequest = async ({ employeeId, type, date }: any) => {
+  let typeSearch = leavingTypes.includes(type) ? { in: leavingTypes } : type;
+  const sameTypeRequest = await prisma.request.findMany({
+    where: {
+      employeeId,
+      type: typeSearch,
+      date: {
+        equals: new Date(dayjs(date).format("YYYY-MM-DD")),
+      },
+    },
+  });
+
+  let checked;
+
+  if (!checkInOutTypes.includes(type)) {
+    checked = sameTypeRequest.filter((request) => {
+      return (
+        request.status !== REQUEST_STATUS.REJECTED.value ||
+        (request.status === REQUEST_STATUS.REJECTED.value &&
+          request.isCancelled)
+      );
+    })?.length;
+  } else {
+    checked = sameTypeRequest.filter(
+      (request) => request.status === REQUEST_STATUS.PENDING.value
+    )?.length;
+  }
+
+  if (checked) {
+    return true;
+  }
+  return false;
 };
 
 const getRequests = async (req: Request, res: Response) => {
@@ -153,22 +195,52 @@ const updateRequest = async (req: Request, res: Response) => {
       },
     });
 
-    if (isCancelled !== undefined) {
+    if (isCancelled) {
       const requestEmail = request?.employee.employeeAccount?.email;
       if (requestEmail !== email) {
         return res.sendStatus(403);
       }
-      await prisma.request.update({
-        where: {
-          id: requestId,
-        },
-        data: {
-          isCancelled,
-          status: PENDING.value,
-        },
-      });
-    }
 
+      if (!request?.isAdminReviewed) {
+        await prisma.request.delete({
+          where: {
+            id: requestId,
+          },
+        });
+        return res.sendStatus(200);
+      }
+
+      if (request?.isAdminReviewed) {
+        if (
+          request.type === REQUEST_TYPES.MODIFY_CHECKIN.value ||
+          request.type === REQUEST_TYPES.MODIFY_CHECKOUT.value
+        ) {
+          return res
+            .status(400)
+            .send({ message: "Please create another request" });
+        } else if (request.status === REQUEST_STATUS.REJECTED.value) {
+          return res.status(400).send({
+            message: "Can not cancel because this request is rejected",
+          });
+        } else if (
+          request.status === REQUEST_STATUS.ACCEPTED.value &&
+          !request.isCancelled
+        ) {
+          await prisma.request.update({
+            where: {
+              id: requestId,
+            },
+            data: {
+              isCancelled: true,
+              status: REQUEST_STATUS.PENDING.value,
+            },
+          });
+          return res.sendStatus(200);
+        } else {
+          return res.sendStatus(400);
+        }
+      }
+    }
     if (status !== undefined) {
       if (role === EMPLOYEE.value) {
         return res.sendStatus(403);
@@ -199,7 +271,11 @@ const updateRequest = async (req: Request, res: Response) => {
           return res.sendStatus(403);
         }
       }
-      if (status === ACCEPTED.value && request?.isCancelled) {
+      if (
+        status === REQUEST_STATUS.ACCEPTED.value &&
+        request?.isCancelled &&
+        !checkInOutTypes.includes(request.type)
+      ) {
         await prisma.request.delete({
           where: {
             id: requestId,
@@ -207,18 +283,70 @@ const updateRequest = async (req: Request, res: Response) => {
         });
         return res.sendStatus(200);
       }
+      if (
+        (request?.type === REQUEST_TYPES.MODIFY_CHECKIN.value ||
+          request?.type === REQUEST_TYPES.MODIFY_CHECKOUT.value) &&
+        status === REQUEST_STATUS.ACCEPTED.value
+      ) {
+        await updateCheckInOut({ request, type: request.type });
+      }
       await prisma.request.update({
         where: {
           id: requestId,
         },
         data: {
           status,
+          isAdminReviewed: true,
         },
       });
     }
     return res.sendStatus(200);
   } catch (error: any) {
+    console.log(error);
     return res.sendStatus(400);
+  }
+};
+
+const updateCheckInOut = async ({ request, type }: any) => {
+  const duration = request.duration;
+  const [hour, minute] = duration
+    ?.split("-")
+    ?.filter((part: any) => part !== undefinedItem)?.[0]
+    ?.split(":") as any;
+  const newTime = dayjs(request.date).hour(hour).minute(minute).toDate();
+  const typeCheckInOut =
+    type === REQUEST_TYPES.MODIFY_CHECKIN.value
+      ? CHECK_IN_OUT_TYPE.checkin.value
+      : CHECK_IN_OUT_TYPE.checkout.value;
+
+  const data = await prisma.checkInOut.findFirst({
+    where: {
+      employeeId: request.employeeId,
+      type: typeCheckInOut,
+      time: {
+        gte: new Date(dayjs(request.date).format("YYYY-MM-DD")),
+        lt: new Date(dayjs(request.date).add(1, "day").format("YYYY-MM-DD")),
+      },
+    },
+  });
+
+  if (data) {
+    await prisma.checkInOut.update({
+      where: {
+        id: data.id,
+      },
+      data: {
+        time: newTime,
+      },
+    });
+  } else {
+    await prisma.checkInOut.create({
+      data: {
+        employeeId: request.employeeId,
+        time: newTime,
+        type: typeCheckInOut,
+      },
+    });
   }
 };
 

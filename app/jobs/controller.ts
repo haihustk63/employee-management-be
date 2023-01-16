@@ -40,6 +40,10 @@ const getAllJobs = async (req: Request, res: Response) => {
 const getJobById = async (req: Request, res: Response) => {
   try {
     const { jobId } = req.params;
+    if (!jobId) {
+      return res.sendStatus(400);
+    }
+
     const job = await prisma.job.findUnique({
       where: {
         id: Number(jobId),

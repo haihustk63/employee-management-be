@@ -61,7 +61,8 @@ const checkInOut = async (req: Request, res: Response) => {
 
 const getCheckInOutInfo = async (req: Request, res: Response) => {
   try {
-    const { id: employeeId } = res.getHeader("user") as any;
+    const { employeeId } = res.getHeader("user") as any;
+
     const { type } = req.query;
 
     if (!type) {
@@ -76,23 +77,21 @@ const getCheckInOutInfo = async (req: Request, res: Response) => {
   }
 };
 
-const getChecked = async (type: string, employeeId: string) => {
-  const today = new Date().toDateString();
-
-  const checkInOutInfo = await prisma.checkInOut.findMany({
+const getChecked = async (type: string, employeeId: number) => {
+  const checkInOutInfo = await prisma.checkInOut.findFirst({
     where: {
-      employeeId: Number(employeeId),
+      employeeId,
       type: Number(type),
+      time: {
+        gte: new Date(dayjs().format("YYYY-MM-DD")),
+        lt: new Date(dayjs().add(1, "day").format("YYYY-MM-DD")),
+      },
     },
   });
 
-  const info = checkInOutInfo.find(
-    (record) => new Date(record.time).toDateString() === today
-  );
-
   return {
-    isChecked: info ? true : false,
-    time: info?.time,
+    isChecked: checkInOutInfo ? true : false,
+    time: checkInOutInfo?.time,
   };
 };
 
@@ -153,13 +152,13 @@ const getCheckInOutTimesheet = async (req: Request, res: Response) => {
     const { id: employeeId } = res.getHeader("user") as any;
     const checkInOutRecords = await prisma.checkInOut.findMany({
       where: {
-        employeeId: Number(employeeId),
+        employeeId,
       },
     });
 
     const requestsRecords = await prisma.request.findMany({
       where: {
-        employeeId: 1,
+        employeeId,
       },
     });
 
@@ -239,7 +238,10 @@ const createGroupInfoByDay = (
 
   filteredLeaveRequests.forEach((item: any) => {
     const { type, date, status, isCancelled, reason } = item;
-    if (status === REQUEST_STATUS.ACCEPTED.value && !isCancelled) {
+    if (
+      status === REQUEST_STATUS.ACCEPTED.value ||
+      (isCancelled && status === REQUEST_STATUS.REJECTED.value)
+    ) {
       const day = dayjs(date).get("date");
       infoMap.set(
         day,
