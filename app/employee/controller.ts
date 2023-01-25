@@ -1,6 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import { Response, Request } from "express";
-import { ROLES } from "@constants/common";
+import { ROLES, UPCLOUD_FOLDERS } from "@constants/common";
+import uploadCloud from "@config/cloudinary";
 
 const { EMPLOYEE, DIVISION_MANAGER } = ROLES;
 
@@ -127,13 +128,23 @@ const getOneEmployeeProfile = async (req: Request, res: Response) => {
 
 const createNewEmployeeProfile = async (req: Request, res: Response) => {
   try {
-    const { data } = req.body;
-    const deliveryId = data.deliveryId;
-    const email = data.email;
-    const isManager = data.role === ROLES.DIVISION_MANAGER.value;
-    const profileData = { ...data };
-    delete profileData.deliveryId;
-    delete profileData.email;
+    const data = JSON.parse(req.body.data);
+    const deliveryId = data?.deliveryId;
+    const email = data?.email;
+    const isManager = data?.role === ROLES.DIVISION_MANAGER.value;
+
+    let profileData = { ...data };
+    delete profileData?.deliveryId;
+    delete profileData?.email;
+
+    if (req.file) {
+      const avatarUrl = await uploadCloud.normal({
+        file: req.file,
+        folder: UPCLOUD_FOLDERS.avatars,
+      });
+
+      profileData = { ...profileData, avatar: avatarUrl };
+    }
 
     const newEmployeeProfile = await prisma.employee.create({
       data: profileData,
@@ -191,15 +202,24 @@ const createManyEmployeeProfile = async (req: Request, res: Response) => {
 
 const updateEmployeeProfile = async (req: Request, res: Response) => {
   try {
-    const { data } = req.body;
     const { employeeId } = req.params;
+    const data = JSON.parse(req.body.data);
+    const deliveryId = data?.deliveryId;
+    const email = data?.email;
+    const isManager = data?.role === ROLES.DIVISION_MANAGER.value;
 
-    const deliveryId = data.deliveryId;
-    const email = data.email;
-    const isManager = data.role === ROLES.DIVISION_MANAGER.value;
-    const profileData = { ...data };
-    delete profileData.deliveryId;
-    delete profileData.email;
+    let profileData = { ...data };
+    delete profileData?.deliveryId;
+    delete profileData?.email;
+
+    if (req.file) {
+      const avatarUrl = await uploadCloud.normal({
+        file: req.file,
+        folder: UPCLOUD_FOLDERS.avatars,
+      });
+
+      profileData = { ...profileData, avatar: avatarUrl.url };
+    }
 
     const updatedEmployeeProfile = await prisma.employee.update({
       where: {

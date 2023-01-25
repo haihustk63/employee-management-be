@@ -11,7 +11,8 @@ import {
   getContestantTests,
   getContestantTest,
   updateContestantTest,
-  assignContestantTest
+  assignContestantTest,
+  deleteTest,
 } from "./controller";
 import { authMiddleware } from "@middleware/index";
 
@@ -20,7 +21,6 @@ const {
   CREATE_TEST_RANDOM,
   SAVE_TEST,
   TEST_MODIFY,
-  TEST_STATUS,
   TESTS,
   CONTESTANT_TEST,
   CONTESTANT_TEST_MODIFY,
@@ -42,6 +42,7 @@ router.post(CREATE_TEST_RANDOM, authMiddleware, createTestRandom);
 router.post(CREATE_TEST_MANUAL, authMiddleware, createTest);
 router.post(SAVE_TEST, authMiddleware, saveTest);
 router.patch(TEST_MODIFY, authMiddleware, updateTest);
+router.delete(TEST_MODIFY, authMiddleware, deleteTest);
 //
 //
 router.post(SUBMIT_TEST, authMiddleware, submitTest);

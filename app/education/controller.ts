@@ -1,3 +1,5 @@
+import uploadCloud from "@config/cloudinary";
+import { UPCLOUD_FOLDERS } from "@constants/common";
 import { PrismaClient } from "@prisma/client";
 import dayjs from "dayjs";
 import { RequestHandler } from "express";
@@ -6,10 +8,26 @@ const prisma = new PrismaClient();
 
 const createEducationProgram: RequestHandler = async (req, res, next) => {
   try {
-    const { data } = req.body;
+    const data = JSON.parse(req.body.data);
     const { tutorId = "", ...rest } = data || {};
+
+    let dataToSave = { ...rest };
+    if (req.files) {
+      const uploadTasks = (req.files as Express.Multer.File[])?.map(
+        (file: any) => {
+          return uploadCloud.useConvert({
+            file,
+            folder: UPCLOUD_FOLDERS.educationMaterials,
+          });
+        }
+      );
+      const uploadedItems = await Promise.all(uploadTasks);
+      const materialUrls = uploadedItems.map((item) => item.url);
+      dataToSave = { ...dataToSave, materials: materialUrls };
+    }
+
     const newProgram = await prisma.educationProgram.create({
-      data: rest,
+      data: dataToSave,
     });
 
     if (tutorId) {
@@ -48,7 +66,7 @@ const getAllEducationPrograms: RequestHandler = async (req, res, next) => {
       },
     });
 
-    const resPrograms = handlePrograms(programs);
+    const resPrograms = transformPrograms(programs);
 
     return res.status(200).send({ allPrograms: resPrograms });
   } catch (err) {
@@ -86,7 +104,7 @@ const getMyEducationPrograms: RequestHandler = async (req, res, next) => {
     });
 
     const myPrograms = records.map((record) => record.program);
-    const resPrograms = handlePrograms(myPrograms);
+    const resPrograms = transformPrograms(myPrograms);
 
     return res.status(200).send({ allPrograms: resPrograms });
   } catch (err) {
@@ -94,7 +112,7 @@ const getMyEducationPrograms: RequestHandler = async (req, res, next) => {
   }
 };
 
-const handlePrograms = (programs: any[]) => {
+const transformPrograms = (programs: any[]) => {
   return programs?.map((item: any) => {
     const { employees, time, duration, ...rest } = item;
     const tutor = employees?.find(
@@ -162,15 +180,48 @@ const getEducationProgramById: RequestHandler = async (req, res, next) => {
 
 const updateEducationProgram: RequestHandler = async (req, res, next) => {
   try {
-    const { programId } = req.params;
-    const { data } = req.body;
-    const { tutorId, ...rest } = data;
+    const { programId: id } = req.params;
+    const programId = parseInt(id);
+    const data = JSON.parse(req.body.data);
+    const { tutorId = "", deleteMaterialList = [], ...rest } = data || {};
+    let dataToSave = { ...rest };
+    let newMaterials = [];
+
+    const program = await prisma.educationProgram.findUnique({
+      where: {
+        id: programId,
+      },
+    });
+
+    const currentMaterials = program?.materials as any;
+    newMaterials = currentMaterials?.filter(
+      (item: string) => !deleteMaterialList.includes(item)
+    );
+
+    if (req.files) {
+      const uploadTasks = (req.files as Express.Multer.File[])?.map(
+        (file: any) => {
+          return uploadCloud.useConvert({
+            file,
+            folder: UPCLOUD_FOLDERS.educationMaterials,
+          });
+        }
+      );
+      const uploadedItems = await Promise.all(uploadTasks);
+      const materialUrls = uploadedItems.map((item) => item.url);
+      dataToSave = {
+        ...dataToSave,
+        materials: [...newMaterials, ...materialUrls],
+      };
+    }
+
+    console.log(dataToSave);
 
     const updatedProgram = await prisma.educationProgram.update({
       where: {
         id: Number(programId),
       },
-      data: rest,
+      data: dataToSave,
     });
 
     const programTutor = await prisma.employeeEducation.findFirst({

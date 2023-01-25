@@ -47,6 +47,7 @@ model Employee {
   role              Int                 @default(1)
   paidLeaveCount    Int                 @default(0) @map("paid_leave_count")
   workingStatus     Int                 @default(2) @map("working_status")
+  avatar            String?
   createdAt         DateTime            @default(now())
   updatedAt         DateTime            @default(now()) @updatedAt
   employeeAccount   EmployeeAccount?

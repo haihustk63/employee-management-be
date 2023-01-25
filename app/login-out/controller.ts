@@ -21,12 +21,22 @@ const login = async (req: Request, res: Response) => {
         email,
       },
       include: {
-        employee: true,
+        employee: {
+          include: {
+            employeeAccount: {
+              select: {
+                email: true,
+              },
+            },
+          },
+        },
       },
     });
 
     if (!account) {
-      return res.status(STATUS_CODE.BAD_REQUEST).send("Account does not existed");
+      return res
+        .status(STATUS_CODE.BAD_REQUEST)
+        .send("Account does not existed");
     } else {
       const isRightPassword = await bcrypt.compare(password, account.password);
       if (!isRightPassword) {

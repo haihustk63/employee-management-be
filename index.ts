@@ -17,10 +17,10 @@ import {
   testQuestionRouter,
   testsRouter,
   testTopicRouter,
+  statisticsRouter
 } from "@app/index";
 import { errorHandler } from "@middleware/error-handler";
 import { appPort } from "./config";
-import { ROUTES } from "./constants";
 
 const app: Express = express();
 
@@ -38,6 +38,7 @@ const corsOption = {
 // app.use(configResponseHeader);
 app.use(cors(corsOption));
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 app.use(
@@ -55,6 +56,7 @@ app.use(
   jobRouter,
   requestRouter,
   educationRouter,
+  statisticsRouter,
   errorHandler
 );
 

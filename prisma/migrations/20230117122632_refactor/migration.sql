@@ -12,6 +12,9 @@
 ALTER TABLE `test_question` DROP FOREIGN KEY `test_question_topicId_fkey`;
 
 -- AlterTable
+ALTER TABLE `employee` ADD COLUMN `avatar` VARCHAR(191) NULL;
+
+-- AlterTable
 ALTER TABLE `test_question` DROP COLUMN `question-source`,
     DROP COLUMN `question-text`,
     DROP COLUMN `topicId`,

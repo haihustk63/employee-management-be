@@ -195,3 +195,27 @@ export const CHECK_IN_OUT_TYPE = {
     label: "Check out",
   },
 };
+
+export const UPCLOUD_FOLDERS = {
+  educationMaterials: "education-materials",
+  avatars: "avatars",
+};
+
+export const TIME_FILTER_TYPES = {
+  allTime: {
+    value: 1,
+    label: "All time",
+  },
+  year: {
+    value: 2,
+    label: "Year",
+  },
+  quarter: {
+    value: 3,
+    label: "Quarter",
+  },
+  month: {
+    value: 4,
+    label: "Month",
+  },
+};

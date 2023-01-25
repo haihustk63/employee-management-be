@@ -19,6 +19,7 @@ const getAllAccounts = async (req: Request, res: Response) => {
             firstName: true,
             lastName: true,
             middleName: true,
+            role: true,
           },
         },
         candidate: {
@@ -83,15 +84,41 @@ const updateAccount = async (req: Request, res: Response) => {
     if (!employeeId && !candidateId) {
       throw new Error("Need employeeId or candidateId");
     }
-    await prisma.employeeAccount.update({
+
+    const account = await prisma.employeeAccount.findUnique({
       where: {
         email,
       },
-      data: {
-        employeeId,
-        candidateId,
-      },
     });
+
+    if (candidateId) {
+      if (account?.candidateId) {
+        return res.sendStatus(400);
+      }
+      await prisma.employeeAccount.update({
+        where: {
+          email,
+        },
+        data: {
+          candidateId,
+        },
+      });
+    }
+
+    if (employeeId) {
+      if (account?.employeeId) {
+        return res.sendStatus(400);
+      }
+      await prisma.employeeAccount.update({
+        where: {
+          email,
+        },
+        data: {
+          employeeId,
+        },
+      });
+    }
+    
     return res.sendStatus(200);
   } catch (error) {
     return res.status(400).send({ error });

@@ -67,6 +67,12 @@ const saveTest = async (req: Request, res: Response) => {
   try {
     const { data } = req.body;
     const { questionIds, title, duration } = data;
+    if (!title || !duration) {
+      return res
+        .status(400)
+        .send({ message: "Title and duration must be provided" });
+    }
+
     const newTest = await prisma.skillTest.create({
       data: {
         title,
@@ -140,6 +146,22 @@ const updateTest = async (req: Request, res: Response) => {
     return res.sendStatus(200);
   } catch (error: any) {
     console.log(error.message);
+    return res.sendStatus(400);
+  }
+};
+
+const deleteTest = async (req: Request, res: Response) => {
+  try {
+    const { testId } = req.params;
+
+    await prisma.skillTest.delete({
+      where: {
+        id: parseInt(testId),
+      },
+    });
+
+    return res.sendStatus(200);
+  } catch (error: any) {
     return res.sendStatus(400);
   }
 };
@@ -539,6 +561,7 @@ export {
   submitTest,
   getAllTests,
   updateTest,
+  deleteTest,
   getContestantTests,
   updateContestantTest,
   getContestantTest,

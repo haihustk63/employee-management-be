@@ -1,17 +1,20 @@
-import { Router } from "express";
+import uploadCloud from "@config/cloudinary";
+import upload from "@config/multer";
+import { UPCLOUD_FOLDERS } from "@constants/common";
+import { authMiddleware } from "@middleware/index";
 import { ROUTES } from "constants/index";
+import { Router } from "express";
 import {
   createEducationProgram,
+  deleteEducationProgram,
   getAllEducationPrograms,
   getEducationProgramById,
-  updateEducationProgram,
-  deleteEducationProgram,
-  joinEducationProgram,
-  unJoinEducationProgram,
   getMyEducationPrograms,
+  joinEducationProgram,
   rateEducationProgram,
+  unJoinEducationProgram,
+  updateEducationProgram,
 } from "./controller";
-import { authMiddleware } from "@middleware/index";
 
 const {
   EDUCATION_PROGRAMS,
@@ -26,9 +29,19 @@ const router = Router();
 //get test
 router.get(EDUCATION_PROGRAMS, authMiddleware, getAllEducationPrograms);
 router.get(MY_EDUCATION_PROGRAMS, authMiddleware, getMyEducationPrograms);
-router.post(EDUCATION_PROGRAMS, authMiddleware, createEducationProgram);
+router.post(
+  EDUCATION_PROGRAMS,
+  authMiddleware,
+  upload.array("materials[]"),
+  createEducationProgram
+);
 router.get(EDUCATION_PROGRAMS_MODIFY, authMiddleware, getEducationProgramById);
-router.patch(EDUCATION_PROGRAMS_MODIFY, authMiddleware, updateEducationProgram);
+router.patch(
+  EDUCATION_PROGRAMS_MODIFY,
+  authMiddleware,
+  upload.array("materials[]"),
+  updateEducationProgram
+);
 router.delete(
   EDUCATION_PROGRAMS_MODIFY,
   authMiddleware,

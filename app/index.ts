@@ -25,3 +25,5 @@ export { default as accountRouter } from "./account/route";
 export { default as requestRouter } from "./request/route";
 
 export { default as educationRouter } from "./education/route";
+
+export { default as statisticsRouter } from "./statistics/route";
