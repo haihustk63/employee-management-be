@@ -6,11 +6,12 @@ import {
   createNewAccount,
   deleteAccount,
   updateAccount,
+  changePassword,
 } from "./controller";
 import { authMiddleware } from "@middleware/index";
 
 const router = Router();
-const { ACCOUNT } = ROUTES;
+const { ACCOUNT, CHANGE_PASSWORDS } = ROUTES;
 
 // get all account
 router.get(ACCOUNT, authMiddleware, getAllAccounts);
@@ -22,5 +23,7 @@ router.post(ACCOUNT, authMiddleware, createNewAccount);
 router.delete(ACCOUNT, authMiddleware, deleteAccount);
 
 router.patch(ACCOUNT, authMiddleware, updateAccount);
+//
+router.patch(CHANGE_PASSWORDS, authMiddleware, changePassword);
 
 export default router;

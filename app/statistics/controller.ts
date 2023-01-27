@@ -74,6 +74,9 @@ const statisticsApplicationByQuarter = (
   year: number
 ) => {
   const infoMap = new Map();
+  for (let i = 1; i <= 4; i++) {
+    infoMap.set(i, []);
+  }
   allApplications.map((application) => {
     const { createdAt } = application;
     const applicationYear = dayjs(createdAt).year();
@@ -100,6 +103,9 @@ const getQuarter = (month: number) => {
 
 const statisticsApplicationByMonth = (allApplications: any[], year: number) => {
   const infoMap = new Map();
+  for (let i = 0; i < 12; i++) {
+    infoMap.set(i, []);
+  }
   allApplications.map((application) => {
     const { createdAt } = application;
     const applicationYear = dayjs(createdAt).year();
@@ -124,10 +130,9 @@ const getCandidateStatistics: RequestHandler = async (req, res) => {};
 const getRequestStatistics: RequestHandler = async (req, res) => {};
 
 export {
-    getApplicationStatistics,
-    getJobStatistics,
-    getEducationProgramStatistics,
-    getCandidateStatistics,
-    getRequestStatistics,
+  getApplicationStatistics,
+  getJobStatistics,
+  getEducationProgramStatistics,
+  getCandidateStatistics,
+  getRequestStatistics,
 };
-

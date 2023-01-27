@@ -3,7 +3,7 @@ import { Response, Request } from "express";
 import { ROLES, UPCLOUD_FOLDERS } from "@constants/common";
 import uploadCloud from "@config/cloudinary";
 
-const { EMPLOYEE, DIVISION_MANAGER } = ROLES;
+const roleAdmin = [ROLES.ADMIN.value, ROLES.SUPER_ADMIN.value];
 
 const prisma = new PrismaClient();
 
@@ -202,6 +202,7 @@ const createManyEmployeeProfile = async (req: Request, res: Response) => {
 
 const updateEmployeeProfile = async (req: Request, res: Response) => {
   try {
+    const { role } = res.getHeader("user") as any;
     const { employeeId } = req.params;
     const data = JSON.parse(req.body.data);
     const deliveryId = data?.deliveryId;
@@ -221,17 +222,34 @@ const updateEmployeeProfile = async (req: Request, res: Response) => {
       profileData = { ...profileData, avatar: avatarUrl.url };
     }
 
+    if (profileData.role) {
+      if (
+        profileData.role === ROLES.SUPER_ADMIN.value ||
+        (profileData.role === ROLES.ADMIN.value &&
+          role !== ROLES.SUPER_ADMIN.value) ||
+        (!roleAdmin.includes(profileData.role) && !roleAdmin.includes(role))
+      ) {
+        return res.sendStatus(403);
+      }
+    }
+
     const updatedEmployeeProfile = await prisma.employee.update({
       where: {
         id: Number(employeeId),
       },
       data: profileData,
       select: {
-        employeeAccount: true,
+        employeeAccount: {
+          select: {
+            email: true,
+            candidateId: true,
+            employeeId: true,
+          },
+        },
       },
     });
 
-    if (updatedEmployeeProfile.employeeAccount?.email !== email) {
+    if (email && updatedEmployeeProfile.employeeAccount?.email !== email) {
       const accountOfEmail = await prisma.employeeAccount.findUnique({
         where: {
           email,

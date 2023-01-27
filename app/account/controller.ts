@@ -118,7 +118,7 @@ const updateAccount = async (req: Request, res: Response) => {
         },
       });
     }
-    
+
     return res.sendStatus(200);
   } catch (error) {
     return res.status(400).send({ error });
@@ -136,4 +136,52 @@ const deleteAccount = async (req: Request, res: Response) => {
   }
 };
 
-export { getAllAccounts, createNewAccount, deleteAccount, updateAccount };
+const changePassword = async (req: Request, res: Response) => {
+  try {
+    const {
+      employeeAccount: { email },
+    } = res.getHeader("user") as any;
+
+    const { oldPassword, newPassword } = req.body.data || {};
+
+    if (!oldPassword || !newPassword) {
+      return res.sendStatus(400);
+    }
+
+    const account = await prisma.employeeAccount.findUnique({
+      where: {
+        email,
+      },
+    });
+
+    const rightPassword = await bcrypt.compare(oldPassword, account?.password!);
+    if (!rightPassword) {
+      return res.status(400).send({ message: "Password is incorrect" });
+    }
+
+    const newPasswordHash = await bcrypt.hash(
+      newPassword,
+      PASSWORD_SALT_ROUNDS
+    );
+    await prisma.employeeAccount.update({
+      where: {
+        email,
+      },
+      data: {
+        password: newPasswordHash,
+      },
+    });
+
+    return res.sendStatus(200);
+  } catch (error) {
+    return res.status(400).send({ error });
+  }
+};
+
+export {
+  getAllAccounts,
+  createNewAccount,
+  deleteAccount,
+  updateAccount,
+  changePassword,
+};
