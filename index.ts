@@ -1,11 +1,64 @@
+import cookieParser from "cookie-parser";
+import cors from "cors";
 import express, { Express } from "express";
-import dotenv from "dotenv";
+
+import {
+  accountRouter,
+  candidateApplyRouter,
+  checkInOutRouter,
+  constantRouter,
+  deliveryRouter,
+  educationRouter,
+  employeeProfileRouter,
+  jobRouter,
+  loginRouter,
+  positionRouter,
+  requestRouter,
+  testQuestionRouter,
+  testsRouter,
+  testTopicRouter,
+  statisticsRouter
+} from "@app/index";
+import { errorHandler } from "@middleware/error-handler";
+import { appPort } from "./config";
 
 const app: Express = express();
 
-dotenv.config();
+const corsOption = {
+  optionsSuccessStatus: 200,
+  origin: [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://127.0.0.1:3000",
+    "http://localhost:3000",
+  ],
+  credentials: true,
+};
 
-const appPort = process.env.APP_PORT || 7200;
+// app.use(configResponseHeader);
+app.use(cors(corsOption));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
+
+app.use(
+  candidateApplyRouter,
+  accountRouter,
+  employeeProfileRouter,
+  deliveryRouter,
+  positionRouter,
+  testTopicRouter,
+  testQuestionRouter,
+  constantRouter,
+  loginRouter,
+  testsRouter,
+  checkInOutRouter,
+  jobRouter,
+  requestRouter,
+  educationRouter,
+  statisticsRouter,
+  errorHandler
+);
 
 app.listen(appPort, () => {
   console.log(`Congratulation! App is listening on port ${appPort}`);

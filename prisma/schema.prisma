@@ -1,0 +1,318 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Position {
+  id          Int        @id @default(autoincrement())
+  name        String     @db.VarChar(20)
+  description String?    @db.LongText
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @default(now()) @updatedAt
+  employees   Employee[]
+  jobs        Job[]
+
+  @@map("position")
+}
+
+model Delivery {
+  id               Int                @id @default(autoincrement())
+  name             String             @db.VarChar(20)
+  description      String?
+  deliveryEmployee DeliveryEmployee[]
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @default(now()) @updatedAt
+
+  @@map("delivery")
+}
+
+model Employee {
+  id                Int                 @id @default(autoincrement())
+  firstName         String              @map("first_name") @db.VarChar(20)
+  middleName        String?             @map("middle_name") @db.VarChar(20)
+  lastName          String              @map("last_name") @db.VarChar(20)
+  phoneNumber       String?             @map("phone_number") @db.VarChar(10)
+  dateOfBirth       DateTime?           @map("date_of_birth")
+  positionId        Int?                @map("position_id")
+  position          Position?           @relation(fields: [positionId], references: [id], onDelete: SetNull)
+  joinDate          DateTime            @default(now()) @map("join_date")
+  location          Json?
+  role              Int                 @default(1)
+  paidLeaveCount    Int                 @default(0) @map("paid_leave_count")
+  workingStatus     Int                 @default(2) @map("working_status")
+  avatar            String?
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @default(now()) @updatedAt
+  employeeAccount   EmployeeAccount?
+  devices           Device[]
+  checkInOut        CheckInOut[]
+  requests          Request[]
+  educationPrograms EmployeeEducation[]
+  candidates        Candidate[]
+  deliveryEmployee  DeliveryEmployee?
+
+  @@map("employee")
+}
+
+model DeliveryEmployee {
+  deliveryId Int      @map("delivery_id")
+  delivery   Delivery @relation(fields: [deliveryId], references: [id], onDelete: Cascade)
+  employeeId Int      @unique @map("employee_id")
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  isManager  Boolean  @default(false) @map("is_manager")
+  createdAt  DateTime @default(now())
+
+  @@map("delivery_employee")
+}
+
+model Candidate {
+  id              Int              @id @default(autoincrement())
+  name            String           @db.VarChar(30)
+  phone           String?          @db.VarChar(10)
+  email           String           @db.VarChar(30)
+  appointmentTime DateTime?        @map("appointment_time")
+  cvLink          String           @map("cv_link")
+  interviewerId   Int?             @map("interviewer_id")
+  interviewer     Employee?        @relation(fields: [interviewerId], references: [id], onDelete: SetNull)
+  assessment      Int?             @default(2)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @default(now()) @updatedAt
+  job             Job?             @relation(fields: [jobId], references: [id], onDelete: SetNull)
+  jobId           Int?
+  employeeAccount EmployeeAccount?
+
+  @@map("candidate")
+}
+
+model EmployeeAccount {
+  email            String             @id @unique
+  password         String
+  employeeId       Int?               @unique @map("employee_id")
+  employee         Employee?          @relation(fields: [employeeId], references: [id], onDelete: SetNull)
+  candidateId      Int?               @unique @map("candidate_id")
+  candidate        Candidate?         @relation(fields: [candidateId], references: [id], onDelete: SetNull)
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @default(now()) @updatedAt
+  skillTestAccount SkillTestAccount[]
+
+  @@map("employee_account")
+}
+
+model DeviceType {
+  id          Int      @id @default(autoincrement())
+  name        String   @db.VarChar(30)
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
+  devices     Device[]
+
+  @@map("device_type")
+}
+
+model DeviceBrand {
+  id          Int      @id @default(autoincrement())
+  name        String   @db.VarChar(30)
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
+  devices     Device[]
+
+  @@map("device_brand")
+}
+
+model Device {
+  id            Int         @id @default(autoincrement())
+  name          String      @db.VarChar(30)
+  deviceTypeId  Int         @map("device_type_id")
+  deviceType    DeviceType  @relation(fields: [deviceTypeId], references: [id])
+  deviceBrandId Int
+  deviceBrand   DeviceBrand @relation(fields: [deviceBrandId], references: [id])
+  option        Json?
+  description   String?
+  employeeId    Int?
+  employee      Employee?   @relation(fields: [employeeId], references: [id], onDelete: SetNull)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @default(now()) @updatedAt
+
+  @@map("device")
+}
+
+// 0 - check in, 1- check out
+model CheckInOut {
+  id         Int      @id @default(autoincrement())
+  employeeId Int      @map("employee_id")
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  time       DateTime @default(now())
+  type       Int      @default(0)
+  createdAt  DateTime @default(now())
+
+  @@unique([employeeId, time])
+  @@map("check_in_out")
+}
+
+// MODIFY_CHECKIN: 1
+// MODIFY_CHECKOUT: 2
+// UNPAID_LEAVE:3
+// ANNUAL_LEAVE:4
+// OVER_TIME: 5
+// REMOTE: 6
+
+//status
+// PENDING: 1
+// ACCEPTED: 2
+// REJECTED: 3
+
+model Request {
+  id              Int      @id @default(autoincrement())
+  employeeId      Int      @map("employee_id")
+  employee        Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  date            DateTime @db.Date
+  duration        String?
+  reason          String?
+  type            Int      @default(1)
+  status          Int      @default(1)
+  isCancelled     Boolean  @default(false)
+  isAdminReviewed Boolean  @default(false)
+  createdAt       DateTime @default(now())
+
+  @@map("request")
+}
+
+model RecruimentNews {
+  id        Int      @id @default(autoincrement())
+  title     String
+  content   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@map("recruiment_news")
+}
+
+model EducationProgram {
+  id        Int                 @id @default(autoincrement())
+  title     String
+  content   String?             @db.LongText
+  time      DateTime?
+  duration  Int                 @default(30)
+  completed Boolean             @default(false)
+  materials Json?
+  employees EmployeeEducation[]
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @default(now()) @updatedAt
+
+  @@map("education_program")
+}
+
+model EmployeeEducation {
+  employeeId Int              @map("employee_id")
+  employee   Employee         @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  programId  Int              @map("program_id")
+  program    EducationProgram @relation(fields: [programId], references: [id], onDelete: Cascade)
+  isTutor    Boolean          @default(false) @map("is_tutor")
+  rate       Int?
+  createdAt  DateTime         @default(now())
+
+  @@unique([employeeId, programId])
+  @@map("employee_education")
+}
+
+model TestTopic {
+  id                Int            @id @default(autoincrement())
+  name              String         @db.VarChar(30)
+  description       String?
+  testTopicQuestion TestQuestion[]
+
+  @@map("test_topic")
+}
+
+// ONE_CHOICE : 1
+// MULTIPLE_CHOICE: 2
+// ESSAYS: 3
+
+// EASY: 1
+// MEDIUM: 2
+// HARD: 3
+
+model TestQuestion {
+  id                     Int                      @id @default(autoincrement())
+  questionText           String                   @map("question_text")
+  questionSource         Json?                    @map("question_source")
+  type                   Int                      @default(1)
+  level                  Int                      @default(1)
+  options                Json?
+  answer                 Json?
+  topicId                Int                      @map("topic_id")
+  topic                  TestTopic                @relation(references: [id], fields: [topicId])
+  testQuestionSkillTest  TestQuestionSkillTest[]
+  skillTestSessionAnswer SkillTestSessionAnswer[]
+
+  @@map("test_question")
+}
+
+model SkillTest {
+  id                    Int                     @id @default(autoincrement())
+  title                 String
+  duration              Int                     @default(0)
+  skillTestAccount      SkillTestAccount[]
+  testQuestionSkillTest TestQuestionSkillTest[]
+
+  @@map("skill_test")
+}
+
+model SkillTestAccount {
+  id                     Int                      @id @default(autoincrement())
+  email                  String
+  testId                 Int                      @map("test_id")
+  test                   SkillTest                @relation(references: [id], fields: [testId], onDelete: Cascade)
+  account                EmployeeAccount          @relation(fields: [email], references: [email], onDelete: Cascade)
+  score                  Int                      @default(0)
+  status                 Int                      @default(1)
+  skillTestSessionAnswer SkillTestSessionAnswer[]
+
+  @@unique([email, testId])
+  @@map("skill_test_account")
+}
+
+model TestQuestionSkillTest {
+  questionId Int          @map("question_id")
+  question   TestQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  testId     Int          @map("test_id")
+  test       SkillTest    @relation(references: [id], fields: [testId], onDelete: Cascade)
+
+  @@unique([questionId, testId])
+  @@map("test_question_skill_test")
+}
+
+model SkillTestSessionAnswer {
+  sessionId   Int              @map("session_id")
+  sensionInfo SkillTestAccount @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  questionId  Int              @map("question_id")
+  question    TestQuestion     @relation(references: [id], fields: [questionId], onDelete: Cascade)
+  answer      Json?
+
+  @@unique([sessionId, questionId])
+  @@map("skill_test_session_answer")
+}
+
+model Job {
+  id         Int         @id @default(autoincrement())
+  title      String
+  // 0 - parttime, 1 - fulltime
+  typeOfJob  Int         @map("type_of_job")
+  upTo       Int?        @map("up_to")
+  // intern, fresher, junior, middle, senior
+  level      Int
+  jobDetail  String?     @map("job_detail") @db.LongText
+  positionId Int?        @map("position_id")
+  position   Position?   @relation(fields: [positionId], references: [id], onDelete: Cascade)
+  candidate  Candidate[]
+
+  @@map("job")
+}
