@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import { ROLES, STATUS_CODE } from "@constants/common";
 import { NOT_NEED_AUTH_PATH, PERMISSION } from "@constants/index";
+import { webUrl } from "@config/index";
 
 const { CANDIDATE, ADMIN, SUPER_ADMIN } = ROLES;
 
@@ -19,7 +20,7 @@ const authMiddleware = (req: Request, res: Response, next: NextFunction) => {
   let role = CANDIDATE.value;
 
   if (!token) {
-    return res.status(STATUS_CODE.UNAUTHORIZED).send("Unauthorized");
+    return res.sendStatus(STATUS_CODE.UNAUTHORIZED);
   }
 
   const data = jwt.verify(token, process.env.SECRET_TOKEN as string) as any;
