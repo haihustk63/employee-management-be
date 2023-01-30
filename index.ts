@@ -17,7 +17,7 @@ import {
   testQuestionRouter,
   testsRouter,
   testTopicRouter,
-  statisticsRouter
+  statisticsRouter,
 } from "@app/index";
 import { errorHandler } from "@middleware/error-handler";
 import { appPort } from "./config";
@@ -63,3 +63,5 @@ app.use(
 app.listen(appPort, () => {
   console.log(`Congratulation! App is listening on port ${appPort}`);
 });
+
+export default app;
