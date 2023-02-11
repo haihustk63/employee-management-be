@@ -46,8 +46,17 @@ const createEducationProgram: RequestHandler = async (req, res, next) => {
 };
 
 const getAllEducationPrograms: RequestHandler = async (req, res, next) => {
+  const { keyword } = req.query;
+  const whereExtraQuery: any = {};
+  if (keyword) {
+    whereExtraQuery.title = {
+      contains: keyword,
+    };
+  }
+
   try {
     const programs = await prisma.educationProgram.findMany({
+      where: whereExtraQuery,
       include: {
         employees: {
           select: {

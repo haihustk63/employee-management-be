@@ -1,39 +1,44 @@
-import bcrypt from "bcrypt";
+import { sendEmail } from "@config/mailtrap";
 import { PASSWORD_SALT_ROUNDS } from "@constants/index";
 import { PrismaClient } from "@prisma/client";
-import e, { Request, RequestHandler, Response } from "express";
-import { sendEmail } from "@config/mailtrap";
+import bcrypt from "bcrypt";
+import { Request, RequestHandler, Response } from "express";
 
 const prisma = new PrismaClient();
 
 const getAllAccounts = async (req: Request, res: Response) => {
-  try {
-    const allAccounts = await prisma.employeeAccount.findMany({
-      select: {
-        email: true,
-        createdAt: true,
-        updatedAt: true,
-        employeeId: true,
-        employee: {
-          select: {
-            firstName: true,
-            lastName: true,
-            middleName: true,
-            role: true,
-          },
+  const { limit = 10, page = 1 } = req.query;
+
+  const allAccounts = await prisma.employeeAccount.findMany({
+    select: {
+      email: true,
+      createdAt: true,
+      updatedAt: true,
+      employeeId: true,
+      employee: {
+        select: {
+          firstName: true,
+          lastName: true,
+          middleName: true,
+          role: true,
         },
-        candidate: {
-          select: {
-            name: true,
-          },
-        },
-        candidateId: true,
       },
-    });
-    return res.status(200).send({ allAccounts });
-  } catch (error) {
-    return res.status(400).send({ error });
-  }
+      candidate: {
+        select: {
+          name: true,
+        },
+      },
+      candidateId: true,
+    },
+  });
+
+  const total = await prisma.employeeAccount.count();
+
+  // const total = isGetAllRecords([], req.query)
+
+  return res
+    .status(200)
+    .send({ data: allAccounts, total, limit: +limit, page: +page });
 };
 
 const createNewAccount: RequestHandler = async (req, res, next) => {
@@ -42,6 +47,12 @@ const createNewAccount: RequestHandler = async (req, res, next) => {
     const { email, password, employeeId, candidateId } = data || {};
 
     if (!email || !password) {
+      return res.sendStatus(400);
+    }
+
+    const isAccountExisted = await checkAccountExist(email);
+
+    if (isAccountExisted) {
       return res.sendStatus(400);
     }
 
@@ -74,6 +85,16 @@ const createNewAccount: RequestHandler = async (req, res, next) => {
     console.log(error);
     return res.status(400).send({ error });
   }
+};
+
+const checkAccountExist = async (email: string) => {
+  const account = await prisma.employeeAccount.findUnique({
+    where: {
+      email,
+    },
+  });
+
+  return !!account;
 };
 
 const updateAccount = async (req: Request, res: Response) => {

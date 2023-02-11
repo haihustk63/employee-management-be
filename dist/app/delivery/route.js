@@ -1,0 +1,13 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const index_1 = require("@constants/index");
+const controller_1 = require("./controller");
+const index_2 = require("@middleware/index");
+const { DELIVERY, DELIVERY_MODIFY } = index_1.ROUTES;
+const router = (0, express_1.Router)();
+router.get(DELIVERY, index_2.authMiddleware, controller_1.getAllDeliveries);
+router.post(DELIVERY, index_2.authMiddleware, controller_1.createNewDelivery);
+router.patch(DELIVERY_MODIFY, index_2.authMiddleware, controller_1.updateDelivery);
+router.delete(DELIVERY_MODIFY, index_2.authMiddleware, controller_1.deleteDelivery);
+exports.default = router;

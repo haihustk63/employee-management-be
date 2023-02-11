@@ -1,96 +1,100 @@
-import { PrismaClient } from "@prisma/client";
+import { Prisma, PrismaClient } from "@prisma/client";
 import { Response, Request } from "express";
-import { ROLES, UPCLOUD_FOLDERS } from "@constants/common";
+import { ROLES, SORT_ORDER, UPCLOUD_FOLDERS } from "@constants/common";
 import uploadCloud from "@config/cloudinary";
+import { isGetAllRecords } from "utils";
 
 const roleAdmin = [ROLES.ADMIN.value, ROLES.SUPER_ADMIN.value];
 
 const prisma = new PrismaClient();
 
 const getAllEmployeeProfile = async (req: Request, res: Response) => {
-  let { delivery, keyword, position, role, workingStatus, joinDate } =
-    req.query;
+  let { limit = 10, page = 1 } = req.query as any;
 
-  const query: any = {
-    deliveryEmployee: {
-      deliveryId: Number(delivery),
-    },
-    OR: [
-      {
-        lastName: {
-          contains: keyword as string,
-        },
-      },
-      {
-        middleName: {
-          contains: keyword as string,
-        },
-      },
-      {
-        firstName: {
-          contains: keyword as string,
-        },
-      },
-      {
-        phoneNumber: {
-          contains: keyword as string,
-        },
-      },
-    ],
-    positionId: {
-      equals: Number(position),
-    },
-    role: {
-      equals: role,
-    },
-    workingStatus: {
-      equals: workingStatus,
-    },
+  const employees: any = await getEmployeeWithParams(req.query, true);
+  const employeesWithoutLimit: any = await getEmployeeWithParams(
+    req.query,
+    false
+  );
+
+  const result = {
+    page: +page,
+    limit: +limit,
+    data: employees,
+    total: employeesWithoutLimit?.length,
   };
 
-  if (!delivery) {
-    delete query.deliveryEmployee;
-  }
-  if (!keyword) {
-    delete query.OR;
-  }
-  if (!position) {
-    delete query.positionId;
-  }
-  if (!role) {
-    delete query.role;
-  }
-  if (!workingStatus) {
-    delete query.workingStatus;
-  }
+  return res.status(200).send(result);
+};
 
-  try {
-    const allEmployeeProfile = await prisma.employee.findMany({
-      where: query,
-      include: {
-        deliveryEmployee: {
-          select: {
-            isManager: true,
-            delivery: {
-              select: {
-                name: true,
-                description: true,
-              },
-            },
-          },
-        },
-        employeeAccount: {
-          select: {
-            email: true,
-          },
-        },
-        position: true,
-      },
-    });
-    return res.status(200).send({ allEmployeeProfile });
-  } catch (error) {
-    return res.status(400).send({ error });
+const getEmployeeWithParams = (query: any, withLimit: boolean) => {
+  let {
+    delivery,
+    keyword,
+    position,
+    role,
+    workingStatus,
+    limit = 10,
+    page = 1,
+    lastNameSort,
+    joinDateSort,
+  } = query as any;
+
+  return prisma.$queryRaw`
+  SELECT ee.id, first_name as firstName, middle_name as middleName, last_name as lastName,
+  phone_number as phoneNumber, date_of_birth as dateOfBirth, join_date as joinDate, role,
+  paid_leave_count as paidLeaveCount, working_status as workingStatus, avatar, email, 
+  delivery_id as deliveryId, is_manager as isManager, dy.name as deliveryName, 
+  position_id as positionId, po.name as positionName
+  FROM employee as ee
+  LEFT JOIN employee_account AS ea ON ee.id = ea.employee_id
+  LEFT JOIN delivery_employee AS de ON ee.id = de.employee_id
+  LEFT JOIN delivery AS dy ON de.delivery_id = dy.id
+  LEFT JOIN position AS po ON po.id = ee.position_id
+  WHERE 1
+  ${
+    keyword
+      ? Prisma.sql`AND first_name LIKE ${`%${keyword}%`} 
+      OR last_name LIKE ${`%${keyword}%`} 
+      OR middle_name LIKE ${`%${keyword}%`} 
+      OR phone_number LIKE ${`%${keyword}%`} 
+      OR email LIKE ${`%${keyword}%`}`
+      : Prisma.empty
   }
+  ${delivery ? Prisma.sql`AND delivery_id = ${+delivery}` : Prisma.empty}
+  ${position ? Prisma.sql`AND position_id = ${+position}` : Prisma.empty}
+  ${role ? Prisma.sql`AND role = ${+role}` : Prisma.empty}
+  ${
+    workingStatus
+      ? Prisma.sql`AND working_status = ${+workingStatus}`
+      : Prisma.empty
+  }
+  ${
+    workingStatus
+      ? Prisma.sql`AND working_status = ${+workingStatus}`
+      : Prisma.empty
+  }
+  ${
+    lastNameSort
+      ? +lastNameSort === SORT_ORDER.ascend.value
+        ? Prisma.sql`ORDER BY last_name ASC`
+        : Prisma.sql`ORDER BY last_name DESC`
+      : Prisma.empty
+  }
+  ${
+    joinDateSort
+      ? +joinDateSort === SORT_ORDER.ascend.value
+        ? Prisma.sql`ORDER BY join_date ASC`
+        : Prisma.sql`ORDER BY join_date DESC`
+      : Prisma.empty
+  }
+  ${withLimit && limit ? Prisma.sql`LIMIT ${limit}` : Prisma.empty}
+    ${
+      withLimit && page && limit
+        ? Prisma.sql`OFFSET ${(+page - 1) * +limit}`
+        : Prisma.empty
+    }
+  `;
 };
 
 const getOneEmployeeProfile = async (req: Request, res: Response) => {

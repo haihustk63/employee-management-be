@@ -171,9 +171,10 @@ const getCheckInOutTimesheet = async (req: Request, res: Response) => {
       filteredLeaveRequests
     );
 
-    const lastResponse = groupData.map(workingTime);
+    const lastResult = groupData.map(workingTime);
+    const total = dayjs().daysInMonth();
 
-    return res.status(STATUS_CODE.SUCCESS).send(lastResponse);
+    return res.status(STATUS_CODE.SUCCESS).send({ data: lastResult, total });
   } catch (error) {
     console.log(error);
   }

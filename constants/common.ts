@@ -219,3 +219,12 @@ export const TIME_FILTER_TYPES = {
     label: "Month",
   },
 };
+
+export const SORT_ORDER = {
+  ascend: {
+    value: 1,
+  },
+  descend: {
+    value: 2,
+  },
+};

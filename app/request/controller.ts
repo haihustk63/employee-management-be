@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { PrismaClient } from "@prisma/client";
-import { CHECK_IN_OUT_TYPE, ROLES } from "@constants/common";
+import { CHECK_IN_OUT_TYPE, ROLES, SORT_ORDER } from "@constants/common";
 import { REQUEST_STATUS } from "@constants/common";
 import dayjs, { Dayjs } from "dayjs";
 import { REQUEST_TYPES } from "@constants/common";
@@ -93,67 +93,172 @@ const checkSameTypeRequest = async ({ employeeId, type, date }: any) => {
 const getRequests = async (req: Request, res: Response) => {
   try {
     const role = res.getHeader("role");
-    const email = res.getHeader("email");
     const { id: employeeId } = res.getHeader("user") as any;
+    const { page = 1, limit = 10 } = req.query;
 
-    let allRequests;
+    const requests = await getRequestsWithParams({
+      query: req.query,
+      role,
+      employeeId,
+      withLimit: true,
+    });
 
-    if (role === EMPLOYEE.value) {
-      allRequests = await prisma.request.findMany({
-        where: {
-          employeeId,
-        },
-      });
-    } else if (role === DIVISION_MANAGER.value) {
-      const currentEmployee = await prisma.employee.findUnique({
-        where: {
-          id: employeeId,
-        },
-        select: {
-          deliveryEmployee: {
-            select: {
-              deliveryId: true,
-            },
-          },
-        },
-      });
+    const requestsWithoutLimit = await getRequestsWithParams({
+      query: req.query,
+      role,
+      employeeId,
+      withLimit: false,
+    });
 
-      allRequests = await prisma.request.findMany({
-        where: {
-          employee: {
-            deliveryEmployee: {
-              deliveryId: currentEmployee?.deliveryEmployee?.deliveryId,
-            },
-          },
-        },
-        include: {
-          employee: {
-            select: {
-              lastName: true,
-              firstName: true,
-              middleName: true,
-            },
-          },
-        },
-      });
-    } else {
-      allRequests = await prisma.request.findMany({
-        include: {
-          employee: {
-            select: {
-              lastName: true,
-              firstName: true,
-              middleName: true,
-            },
-          },
-        },
-      });
-    }
+    const response = {
+      data: requests,
+      total: requestsWithoutLimit?.length,
+      page: +page,
+      limit: +limit,
+    };
 
-    return res.status(200).send({ allRequests });
+    return res.status(200).send(response);
   } catch (error: any) {
     console.log(error);
     return res.sendStatus(400);
+  }
+};
+
+const getRequestsWithParams = async ({
+  query,
+  role,
+  employeeId,
+  withLimit,
+}: any) => {
+  const {
+    keyword,
+    type,
+    status,
+    page = 1,
+    limit = 10,
+    dateSort,
+    lastNameSort,
+  } = query;
+
+  const orderBy: { [key: string]: object | string } = {};
+  const pageParams: object = withLimit
+    ? {
+        take: +limit,
+        skip: (+page - 1) * +limit,
+      }
+    : {};
+  const whereExtraQuery: { [key: string]: object } = {};
+
+  if (dateSort) {
+    orderBy.date = +dateSort === SORT_ORDER.ascend.value ? "asc" : "desc";
+  }
+
+  if (lastNameSort && role !== EMPLOYEE.value) {
+    orderBy.employee = {
+      lastName: +lastNameSort === SORT_ORDER.ascend.value ? "asc" : "desc",
+    };
+  }
+
+  if (keyword) {
+    whereExtraQuery.OR = [
+      {
+        employee: {
+          OR: [
+            {
+              lastName: {
+                contains: keyword,
+              },
+            },
+            {
+              middleName: {
+                contains: keyword,
+              },
+            },
+            {
+              firstName: {
+                contains: keyword,
+              },
+            },
+          ],
+        },
+      },
+      {
+        reason: {
+          contains: keyword,
+        },
+      },
+    ];
+  }
+
+  if (type) {
+    whereExtraQuery.type = {
+      equals: +type,
+    };
+  }
+
+  if (status) {
+    whereExtraQuery.status = {
+      equals: +status,
+    };
+  }
+
+  if (role === EMPLOYEE.value) {
+    return await prisma.request.findMany({
+      where: {
+        employeeId,
+      },
+      orderBy: orderBy,
+    });
+  } else if (role === DIVISION_MANAGER.value) {
+    const currentEmployee = await prisma.employee.findUnique({
+      where: {
+        id: employeeId,
+      },
+      select: {
+        deliveryEmployee: {
+          select: {
+            deliveryId: true,
+          },
+        },
+      },
+    });
+
+    return prisma.request.findMany({
+      where: {
+        employee: {
+          deliveryEmployee: {
+            deliveryId: currentEmployee?.deliveryEmployee?.deliveryId,
+          },
+        },
+        ...whereExtraQuery,
+      },
+      include: {
+        employee: {
+          select: {
+            lastName: true,
+            firstName: true,
+            middleName: true,
+          },
+        },
+      },
+      orderBy: orderBy,
+      ...pageParams,
+    });
+  } else {
+    return prisma.request.findMany({
+      where: whereExtraQuery,
+      include: {
+        employee: {
+          select: {
+            lastName: true,
+            firstName: true,
+            middleName: true,
+          },
+        },
+      },
+      orderBy: orderBy,
+      ...pageParams,
+    });
   }
 };
 

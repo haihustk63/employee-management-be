@@ -1,5 +1,7 @@
 import { Request, Response } from "express";
 import { Prisma, PrismaClient } from "@prisma/client";
+import { SORT_ORDER } from "@constants/common";
+import { isGetAllRecords } from "utils";
 
 const prisma = new PrismaClient();
 
@@ -56,10 +58,41 @@ const deleteTestQuestion = async (req: Request, res: Response) => {
 };
 
 const getAllTestQuestions = async (req: Request, res: Response) => {
+  const { page = 1, limit = 10 } = req.query;
   try {
-    const { keyword = "", topic, level, type } = req.query;
+    const testQuestions: any = await getQuestionsWithParams(req.query, true);
 
-    const allTestQuestions = await prisma.$queryRaw`
+    const testQuestionsWithoutLimit: any = await getQuestionsWithParams(
+      req.query,
+      false
+    );
+
+    const responseData: { [key: string]: any } = {
+      data: testQuestions,
+      page: +page,
+      limit: +limit,
+      total: testQuestionsWithoutLimit?.length,
+    };
+
+    return res.status(200).send(responseData);
+  } catch (error: any) {
+    console.log(error);
+    return res.sendStatus(400);
+  }
+};
+
+const getQuestionsWithParams = async (query: any, withLimit: boolean) => {
+  const {
+    keyword = "",
+    topic,
+    level,
+    type,
+    page = 1,
+    limit = 10,
+    questionTextSort,
+  } = query as any;
+
+  return prisma.$queryRaw`
     SELECT tq.id, tq.question_text as questionText, tq.question_source as questionSource, 
     tq.type, tq.level, tq.options, tq.answer, tt.name as topicName, tt.description as topicDescription
     FROM test_question as tq INNER JOIN test_topic as tt
@@ -73,12 +106,20 @@ const getAllTestQuestions = async (req: Request, res: Response) => {
     ${topic ? Prisma.sql`AND topic_id=${topic}` : Prisma.empty}
     ${level ? Prisma.sql`AND level=${level}` : Prisma.empty}
     ${type ? Prisma.sql`AND type=${type}` : Prisma.empty}
+    ${
+      questionTextSort
+        ? +questionTextSort === SORT_ORDER.ascend.value
+          ? Prisma.sql`ORDER BY tq.question_text ASC`
+          : Prisma.sql`ORDER BY tq.question_text DESC`
+        : Prisma.empty
+    }
+    ${withLimit && limit ? Prisma.sql`LIMIT ${limit}` : Prisma.empty}
+    ${
+      withLimit && page && limit
+        ? Prisma.sql`OFFSET ${(+page - 1) * +limit}`
+        : Prisma.empty
+    }
   `;
-
-    return res.status(200).send({ allTestQuestions });
-  } catch (error: any) {
-    return res.sendStatus(400);
-  }
 };
 
 const getOneTestQuestion = async (req: Request, res: Response) => {

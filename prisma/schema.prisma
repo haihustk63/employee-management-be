@@ -226,7 +226,7 @@ model EmployeeEducation {
 model TestTopic {
   id                Int            @id @default(autoincrement())
   name              String         @db.VarChar(30)
-  description       String?
+  description       String?        @db.LongText
   testTopicQuestion TestQuestion[]
 
   @@map("test_topic")
@@ -242,7 +242,7 @@ model TestTopic {
 
 model TestQuestion {
   id                     Int                      @id @default(autoincrement())
-  questionText           String                   @map("question_text")
+  questionText           String                   @map("question_text") @db.LongText
   questionSource         Json?                    @map("question_source")
   type                   Int                      @default(1)
   level                  Int                      @default(1)
