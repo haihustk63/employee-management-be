@@ -1,4 +1,4 @@
-import { ROUTES } from "constants/index";
+import { ROUTES } from "@constants/index";
 import { Router } from "express";
 import { getTestQuestionConstant, getRoleConstant } from "./controller";
 

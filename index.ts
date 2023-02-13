@@ -21,7 +21,7 @@ import {
   firebaseAccountRouter,
 } from "@app/index";
 import { errorHandler } from "@middleware/error-handler";
-import { appPort } from "./config";
+import { appPort } from "@config/index";
 
 const app: Express = express();
 

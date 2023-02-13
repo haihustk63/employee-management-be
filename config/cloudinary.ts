@@ -1,7 +1,7 @@
 import { v2 as cloudinary } from "cloudinary";
 import { cloudinaryKey, cloudinaryName, cloudinarySecret } from ".";
 import fs from "fs";
-import { transformFileName } from "utils";
+import { transformFileName } from "@utils/index";
 
 cloudinary.config({
   api_key: cloudinaryKey,

@@ -1,8 +1,6 @@
-import uploadCloud from "@config/cloudinary";
 import upload from "@config/multer";
-import { UPCLOUD_FOLDERS } from "@constants/common";
+import { ROUTES } from "@constants/index";
 import { authMiddleware } from "@middleware/index";
-import { ROUTES } from "constants/index";
 import { Router } from "express";
 import {
   createEducationProgram,

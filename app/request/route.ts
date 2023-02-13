@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { ROUTES } from "constants/index";
+import { ROUTES } from "@constants/index";
 import {
   getOneRequest,
   createNewRequest,
