@@ -101,8 +101,21 @@ model EmployeeAccount {
   createdAt        DateTime           @default(now())
   updatedAt        DateTime           @default(now()) @updatedAt
   skillTestAccount SkillTestAccount[]
+  accountFirebase  AccountFirebase?
 
   @@map("employee_account")
+}
+
+model AccountFirebase {
+  id              Int             @id @default(autoincrement())
+  uid             String          @unique @db.VarChar(100)
+  email           String          @unique
+  googleEmail     String          @unique @map("google_email")
+  employeeAccount EmployeeAccount @relation(fields: [email], references: [email])
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @default(now()) @updatedAt
+
+  @@map("account_firebase")
 }
 
 model DeviceType {

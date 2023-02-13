@@ -18,6 +18,7 @@ import {
   testsRouter,
   testTopicRouter,
   statisticsRouter,
+  firebaseAccountRouter,
 } from "@app/index";
 import { errorHandler } from "@middleware/error-handler";
 import { appPort } from "./config";
@@ -57,6 +58,7 @@ app.use(
   requestRouter,
   educationRouter,
   statisticsRouter,
+  firebaseAccountRouter,
   errorHandler
 );
 

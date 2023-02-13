@@ -27,3 +27,5 @@ export { default as requestRouter } from "./request/route";
 export { default as educationRouter } from "./education/route";
 
 export { default as statisticsRouter } from "./statistics/route";
+
+export { default as firebaseAccountRouter } from "./firebase-account/route";

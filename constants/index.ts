@@ -45,6 +45,9 @@ export const BASE_URLS = {
 
   // statistics
   STATISTICS: "/statistics",
+
+  // firebase
+  FIREBASE_ACCOUNT: "/firebase-account",
 };
 
 export const ROUTES = {
@@ -115,6 +118,10 @@ export const ROUTES = {
   REQUEST_STATISTICS: `${BASE_URLS.STATISTICS}/requests`,
   JOB_STATISTICS: `${BASE_URLS.STATISTICS}/job`,
   EDUCATION_PROGRAM_STATISTICS: `${BASE_URLS.STATISTICS}/education-programs`,
+
+  // firebase
+  FIREBASE_ACCOUNT: BASE_URLS.FIREBASE_ACCOUNT,
+  FIREBASE_ACCOUNT_LOGIN: `${BASE_URLS.FIREBASE_ACCOUNT}/login`,
 };
 
 export const PASSWORD_SALT_ROUNDS = 10;
@@ -143,6 +150,7 @@ const routeEmployee = {
   [ROUTES.CONTESTANT_TEST]: ["GET"],
   [ROUTES.CONTESTANT_TEST_MODIFY]: ["GET", "PATCH"],
   [ROUTES.SUBMIT_TEST]: ["POST"],
+  [ROUTES.FIREBASE_ACCOUNT]: ["POST"],
 };
 
 const routeDivisionManager = {

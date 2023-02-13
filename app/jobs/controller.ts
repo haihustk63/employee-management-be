@@ -17,24 +17,40 @@ const createJob = async (req: Request, res: Response) => {
 };
 
 const getAllJobs = async (req: Request, res: Response) => {
-  try {
-    const { title, typeOfJob, level, positionId } = req.query;
+  const { page = 1, limit = 10 } = req.query;
 
-    const jobs = await prisma.$queryRaw`
+  const jobs = await getJobsWithParams(req.query);
+  const jobsWithoutLimit: any = await getJobsWithParams(req.query, false);
+
+  const response = {
+    page: +page,
+    limit: +limit,
+    data: jobs,
+    total: jobsWithoutLimit?.length,
+  };
+  return res.status(200).send(response);
+};
+
+const getJobsWithParams = (query: any, withLimit: boolean = true) => {
+  const { page = 1, limit = 10, keyword, typeOfJob, level, position } = query;
+
+  return prisma.$queryRaw`
       SELECT job.id, job.title, job.type_of_job as typeOfJob, job.level, job.up_to as upTo, 
       job.job_detail as job_detail, job.position_id as positionId, position.name as positionName 
       FROM job INNER JOIN position
       ON job.position_id = position.id
       WHERE 1
-      ${title ? Prisma.sql`AND title LIKE ${`%${title}%`}` : Prisma.empty}
+      ${keyword ? Prisma.sql`AND title LIKE ${`%${keyword}%`}` : Prisma.empty}
       ${typeOfJob ? Prisma.sql`AND type_of_job=${typeOfJob}` : Prisma.empty}
       ${level ? Prisma.sql`AND level=${level}` : Prisma.empty}
-      ${positionId ? Prisma.sql`AND position_id=${positionId}` : Prisma.empty}
+      ${position ? Prisma.sql`AND position_id=${position}` : Prisma.empty}
+      ${limit && withLimit ? Prisma.sql`LIMIT ${page}` : Prisma.empty}
+      ${
+        page && withLimit
+          ? Prisma.sql`OFFSET ${(+page - 1) * +limit}`
+          : Prisma.empty
+      }
     `;
-    return res.status(200).send({ allJobs: jobs });
-  } catch (err) {
-    console.error(err);
-  }
 };
 
 const getJobById = async (req: Request, res: Response) => {

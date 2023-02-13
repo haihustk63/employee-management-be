@@ -9,7 +9,63 @@ const prisma = new PrismaClient();
 const getAllAccounts = async (req: Request, res: Response) => {
   const { limit = 10, page = 1 } = req.query;
 
-  const allAccounts = await prisma.employeeAccount.findMany({
+  const accounts = await getAccountsParams(req.query);
+  const accountsWithoutLimit = await getAccountsParams(req.query, false);
+  const response = {
+    data: accounts,
+    total: accountsWithoutLimit?.length,
+    limit: +limit,
+    page: +page,
+  };
+
+  return res.status(200).send(response);
+};
+
+const getAccountsParams = (query: any, withLimit: boolean = true) => {
+  const { limit = 10, page = 1, keyword } = query;
+  const whereExtraQuery: any = {};
+
+  const containKeyword = {
+    contains: keyword,
+  };
+
+  if (keyword) {
+    whereExtraQuery.OR = [
+      {
+        email: containKeyword,
+      },
+      {
+        employee: {
+          OR: [
+            {
+              firstName: containKeyword,
+            },
+            {
+              middleName: containKeyword,
+            },
+            {
+              lastName: containKeyword,
+            },
+          ],
+        },
+      },
+      {
+        candidate: {
+          name: containKeyword,
+        },
+      },
+    ];
+  }
+
+  const pageParams: object = withLimit
+    ? {
+        take: +limit,
+        skip: (+page - 1) * +limit,
+      }
+    : {};
+
+  return prisma.employeeAccount.findMany({
+    where: whereExtraQuery,
     select: {
       email: true,
       createdAt: true,
@@ -30,15 +86,8 @@ const getAllAccounts = async (req: Request, res: Response) => {
       },
       candidateId: true,
     },
+    ...pageParams,
   });
-
-  const total = await prisma.employeeAccount.count();
-
-  // const total = isGetAllRecords([], req.query)
-
-  return res
-    .status(200)
-    .send({ data: allAccounts, total, limit: +limit, page: +page });
 };
 
 const createNewAccount: RequestHandler = async (req, res, next) => {

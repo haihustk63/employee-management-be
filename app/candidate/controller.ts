@@ -20,33 +20,78 @@ const createNewApplication = async (req: Request, res: Response) => {
 };
 
 const getAllApplications = async (req: Request, res: Response) => {
-  try {
-    const allApplications = await prisma.candidate.findMany({
-      include: {
-        job: true,
-        interviewer: true,
-        employeeAccount: {
-          select: {
-            email: true,
-            employeeId: true,
-            candidateId: true,
-            skillTestAccount: {
-              include: {
-                test: {
-                  select: {
-                    title: true,
-                  },
+  const { page = 1, limit = 10 } = req.query;
+  const applications = await getApplicationsWithParams(req.query);
+  const applicationsWithoutLimit = await getApplicationsWithParams(
+    req.query,
+    false
+  );
+  const response = {
+    page: +page,
+    limit: +limit,
+    data: applications,
+    total: applicationsWithoutLimit?.length,
+  };
+  return res.status(200).send(response);
+};
+
+const getApplicationsWithParams = (query: any, withLimit: boolean = true) => {
+  const { page = 1, limit = 10, keyword, assessment } = query;
+
+  const pageParams: object = withLimit
+    ? {
+        take: +limit,
+        skip: (+page - 1) * +limit,
+      }
+    : {};
+
+  const whereExtraQuery: any = {};
+
+  if (keyword) {
+    whereExtraQuery.OR = [
+      {
+        name: {
+          contains: keyword,
+        },
+      },
+      {
+        email: {
+          contains: keyword,
+        },
+      },
+    ];
+  }
+
+  if (Number.isInteger(+assessment)) {
+    whereExtraQuery.assessment = {
+      equals: +assessment,
+    };
+  }
+
+  return prisma.candidate.findMany({
+    where: whereExtraQuery,
+    include: {
+      job: true,
+      interviewer: true,
+      employeeAccount: {
+        select: {
+          email: true,
+          employeeId: true,
+          candidateId: true,
+          skillTestAccount: {
+            include: {
+              test: {
+                select: {
+                  title: true,
                 },
               },
             },
           },
         },
       },
-    });
-    return res.status(200).send({ allApplications });
-  } catch (error: any) {
-    return res.status(400).send({ error });
-  }
+    },
+    ...pageParams,
+  });
 };
 
 const updateApplication = async (req: Request, res: Response) => {
