@@ -4,7 +4,7 @@ export const BASE_URLS = {
   EMPLOYEE_PROFILE: "/employees/profile",
   EMPLOYEE_PROFILE_GROUP: "/group/employees/file",
 
-  ACCOUNT: "/accounts",
+  ACCOUNT: "/a",
 
   POSITION: "/positions",
 

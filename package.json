@@ -2,7 +2,7 @@
   "name": "employee-management-be",
   "version": "1.0.0",
   "description": "",
-  "main": "index.ts",
+  "main": "./dist/index.ts",
   "scripts": {
     "dev": "nodemon -e ts,js --exec ts-node -r tsconfig-paths/register index.ts",
     "build": "npx tsc --project tsconfig.json && npx tsc-alias -p tsconfig.json",
