@@ -4,7 +4,7 @@ export const BASE_URLS = {
   EMPLOYEE_PROFILE: "/employees/profile",
   EMPLOYEE_PROFILE_GROUP: "/group/employees/file",
 
-  ACCOUNT: "/a",
+  ACCOUNT: "/accounts",
 
   POSITION: "/positions",
 
@@ -48,6 +48,8 @@ export const BASE_URLS = {
 
   // firebase
   FIREBASE_ACCOUNT: "/firebase-account",
+  //
+  NOTIFICATION_TOPIC: "/notification-topics",
 };
 
 export const ROUTES = {
@@ -122,6 +124,10 @@ export const ROUTES = {
   // firebase
   FIREBASE_ACCOUNT: BASE_URLS.FIREBASE_ACCOUNT,
   FIREBASE_ACCOUNT_LOGIN: `${BASE_URLS.FIREBASE_ACCOUNT}/login`,
+
+  // notification-topic
+  NOTIFICATION_TOPIC: BASE_URLS.NOTIFICATION_TOPIC,
+  NOTIFICATION_TOPIC_CONFIG: `${BASE_URLS.NOTIFICATION_TOPIC}/config`,
 };
 
 export const PASSWORD_SALT_ROUNDS = 10;
@@ -133,10 +139,11 @@ const routeCandidate = {
   [ROUTES.CONTESTANT_TEST]: ["GET"],
   [ROUTES.CONTESTANT_TEST_MODIFY]: ["GET", "PATCH"],
   [ROUTES.SUBMIT_TEST]: ["POST"],
+  [ROUTES.CHANGE_PASSWORDS]: ["PATCH"],
 };
 
 const routeEmployee = {
-  [ROUTES.EMPLOYEE_PROFILE_MODIFY]: ["GET"],
+  [ROUTES.EMPLOYEE_PROFILE_MODIFY]: ["GET", "PATCH"],
   [ROUTES.CHECK_IN_OUT]: ["GET", "POST"],
   [ROUTES.CHECK_IN_OUT_LIST]: ["GET"],
   [ROUTES.CHECK_IN_OUT_TIMESHEET]: ["GET"],
@@ -151,6 +158,7 @@ const routeEmployee = {
   [ROUTES.CONTESTANT_TEST_MODIFY]: ["GET", "PATCH"],
   [ROUTES.SUBMIT_TEST]: ["POST"],
   [ROUTES.FIREBASE_ACCOUNT]: ["POST"],
+  [ROUTES.CHANGE_PASSWORDS]: ["PATCH"],
 };
 
 const routeDivisionManager = {
@@ -180,5 +188,17 @@ export const NOT_NEED_AUTH_PATH = [
   {
     route: ROUTES.CANDIDATE_APPLY,
     method: "POST",
+  },
+];
+
+export const NOVU_TOPIC_KEY = {
+  completeSkillTest: "complete-skill-test",
+};
+
+export const NOTIFICATION_TOPIC_ITEMS = [
+  {
+    key: 1,
+    topicKey: NOVU_TOPIC_KEY.completeSkillTest,
+    label: "Notify when a skill test is completed",
   },
 ];

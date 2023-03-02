@@ -3,6 +3,7 @@
 
 generator client {
   provider = "prisma-client-js"
+  previewFeatures = ["interactiveTransactions"]
 }
 
 datasource db {
@@ -43,7 +44,6 @@ model Employee {
   positionId        Int?                @map("position_id")
   position          Position?           @relation(fields: [positionId], references: [id], onDelete: SetNull)
   joinDate          DateTime            @default(now()) @map("join_date")
-  location          Json?
   role              Int                 @default(1)
   paidLeaveCount    Int                 @default(0) @map("paid_leave_count")
   workingStatus     Int                 @default(2) @map("working_status")
@@ -51,7 +51,6 @@ model Employee {
   createdAt         DateTime            @default(now())
   updatedAt         DateTime            @default(now()) @updatedAt
   employeeAccount   EmployeeAccount?
-  devices           Device[]
   checkInOut        CheckInOut[]
   requests          Request[]
   educationPrograms EmployeeEducation[]
@@ -118,45 +117,6 @@ model AccountFirebase {
   @@map("account_firebase")
 }
 
-model DeviceType {
-  id          Int      @id @default(autoincrement())
-  name        String   @db.VarChar(30)
-  description String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @default(now()) @updatedAt
-  devices     Device[]
-
-  @@map("device_type")
-}
-
-model DeviceBrand {
-  id          Int      @id @default(autoincrement())
-  name        String   @db.VarChar(30)
-  description String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @default(now()) @updatedAt
-  devices     Device[]
-
-  @@map("device_brand")
-}
-
-model Device {
-  id            Int         @id @default(autoincrement())
-  name          String      @db.VarChar(30)
-  deviceTypeId  Int         @map("device_type_id")
-  deviceType    DeviceType  @relation(fields: [deviceTypeId], references: [id])
-  deviceBrandId Int
-  deviceBrand   DeviceBrand @relation(fields: [deviceBrandId], references: [id])
-  option        Json?
-  description   String?
-  employeeId    Int?
-  employee      Employee?   @relation(fields: [employeeId], references: [id], onDelete: SetNull)
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @default(now()) @updatedAt
-
-  @@map("device")
-}
-
 // 0 - check in, 1- check out
 model CheckInOut {
   id         Int      @id @default(autoincrement())
@@ -191,21 +151,11 @@ model Request {
   reason          String?
   type            Int      @default(1)
   status          Int      @default(1)
-  isCancelled     Boolean  @default(false)
-  isAdminReviewed Boolean  @default(false)
+  isCancelled     Boolean  @default(false) @map("is_cancelled")
+  isAdminReviewed Boolean  @default(false) @map("is_admin_reviewed")
   createdAt       DateTime @default(now())
 
   @@map("request")
-}
-
-model RecruimentNews {
-  id        Int      @id @default(autoincrement())
-  title     String
-  content   String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
-
-  @@map("recruiment_news")
 }
 
 model EducationProgram {
@@ -328,4 +278,13 @@ model Job {
   candidate  Candidate[]
 
   @@map("job")
+}
+
+model NotificationTopic {
+  id        Int    @id @default(autoincrement())
+  topicName String @map("topic_name")
+  topicKey  String @unique @map("topic_key")
+  role      Int    @default(1)
+
+  @@map("notification_topic")
 }

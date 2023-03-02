@@ -1,8 +1,9 @@
-import { Prisma, PrismaClient } from "@prisma/client";
-import { Response, Request } from "express";
-import { ROLES, SORT_ORDER, UPCLOUD_FOLDERS } from "@constants/common";
 import uploadCloud from "@config/cloudinary";
-import { isGetAllRecords } from "utils";
+import { novuHelpers } from "@config/novu";
+import { ROLES, SORT_ORDER, UPCLOUD_FOLDERS } from "@constants/common";
+import { Prisma, PrismaClient } from "@prisma/client";
+import { Request, Response } from "express";
+import { getAccountWithEmail } from "@app/login-out/controller";
 
 const roleAdmin = [ROLES.ADMIN.value, ROLES.SUPER_ADMIN.value];
 
@@ -102,7 +103,7 @@ const getOneEmployeeProfile = async (req: Request, res: Response) => {
     const { employeeId } = req.params;
     const employeeProfile = await prisma.employee.findUnique({
       where: {
-        id: Number(employeeId),
+        id: +employeeId,
       },
       include: {
         deliveryEmployee: {
@@ -132,7 +133,7 @@ const getOneEmployeeProfile = async (req: Request, res: Response) => {
 
 const createNewEmployeeProfile = async (req: Request, res: Response) => {
   try {
-    const data = JSON.parse(req.body.data);
+    const data = JSON.parse(req.body.data || "{}");
     const deliveryId = data?.deliveryId;
     const email = data?.email;
     const isManager = data?.role === ROLES.DIVISION_MANAGER.value;
@@ -187,6 +188,8 @@ const createNewEmployeeProfile = async (req: Request, res: Response) => {
       });
     }
 
+    await novuHelpers.createNewSubscriber(newEmployeeProfile);
+
     return res.status(200).send({ newEmployeeProfile });
   } catch (error) {
     return res.status(400).send({ error });
@@ -206,9 +209,14 @@ const createManyEmployeeProfile = async (req: Request, res: Response) => {
 
 const updateEmployeeProfile = async (req: Request, res: Response) => {
   try {
-    const { role } = res.getHeader("user") as any;
+    const {
+      employeeAccount: { email: employeeEmail },
+      role,
+      id,
+    } = res.getHeader("user") as any;
+
     const { employeeId } = req.params;
-    const data = JSON.parse(req.body.data);
+    const data = JSON.parse(req.body.data || "{}");
     const deliveryId = data?.deliveryId;
     const email = data?.email;
     const isManager = data?.role === ROLES.DIVISION_MANAGER.value;
@@ -217,13 +225,18 @@ const updateEmployeeProfile = async (req: Request, res: Response) => {
     delete profileData?.deliveryId;
     delete profileData?.email;
 
+    if (!roleAdmin.includes(role) && id !== +employeeId)
+      return res.sendStatus(403);
+
     if (req.file) {
       const avatarUrl = await uploadCloud.normal({
         file: req.file,
         folder: UPCLOUD_FOLDERS.avatars,
       });
 
-      profileData = { ...profileData, avatar: avatarUrl.url };
+      if (roleAdmin.includes(role))
+        profileData = { ...profileData, avatar: avatarUrl?.url };
+      else profileData = { avatar: avatarUrl?.url };
     }
 
     if (profileData.role) {
@@ -236,156 +249,162 @@ const updateEmployeeProfile = async (req: Request, res: Response) => {
         return res.sendStatus(403);
       }
     }
-
-    const updatedEmployeeProfile = await prisma.employee.update({
-      where: {
-        id: Number(employeeId),
-      },
-      data: profileData,
-      select: {
-        employeeAccount: {
-          select: {
-            email: true,
-            candidateId: true,
-            employeeId: true,
-          },
-        },
-      },
-    });
-
-    if (email && updatedEmployeeProfile.employeeAccount?.email !== email) {
-      const accountOfEmail = await prisma.employeeAccount.findUnique({
+    await prisma.$transaction(async (trx: any) => {
+      const updatedEmployeeProfile = await trx.employee.update({
         where: {
-          email,
+          id: +employeeId,
+        },
+        data: profileData,
+        include: {
+          employeeAccount: {
+            select: {
+              email: true,
+              candidateId: true,
+              employeeId: true,
+            },
+          },
         },
       });
-      if (accountOfEmail?.employeeId) {
-        if (accountOfEmail?.employeeId !== Number(employeeId)) {
-          return res
-            .status(400)
-            .send({ message: "This account has been assigned to a employee" });
-        }
-      } else {
-        await prisma.employeeAccount.update({
-          where: {
-            email: updatedEmployeeProfile.employeeAccount?.email,
-          },
-          data: {
-            employeeId: null,
-          },
-        });
-        await prisma.employeeAccount.update({
+
+      if (email && updatedEmployeeProfile.employeeAccount?.email !== email) {
+        const accountOfEmail = await trx.employeeAccount.findUnique({
           where: {
             email,
           },
-          data: {
-            employeeId: Number(employeeId),
-          },
         });
-      }
-    }
-
-    // Check if deliveryId is sent
-    if (deliveryId) {
-      // If yes, check if the employee existed
-      const findRecordWithManagerId = await prisma.deliveryEmployee.findUnique({
-        where: {
-          employeeId: Number(employeeId),
-        },
-      });
-
-      // If yes
-      if (findRecordWithManagerId) {
-        // Case move the employee to another delivery
-        if (deliveryId !== findRecordWithManagerId.deliveryId) {
-          if (isManager) {
-            // So first of all, update all roles of "another delivery" => not manager
-            await prisma.deliveryEmployee.updateMany({
-              where: {
-                deliveryId,
-                isManager: true,
-              },
-              data: {
-                isManager: false,
-              },
-            });
-
-            // Assign role manager for that employee
-            await prisma.deliveryEmployee.update({
-              where: {
-                employeeId: Number(employeeId),
-              },
-              data: {
-                deliveryId,
-                isManager: true,
-              },
-            });
-          } else {
-            // Move employee to another delivery but his role is not manager
-            await prisma.deliveryEmployee.update({
-              where: {
-                employeeId: Number(employeeId),
-              },
-              data: {
-                deliveryId,
-                isManager: false,
-              },
+        if (accountOfEmail?.employeeId) {
+          if (accountOfEmail?.employeeId !== +employeeId) {
+            return res.status(400).send({
+              message: "This account has been assigned to a employee",
             });
           }
         } else {
-          // Still be in the same delivery
-          if (findRecordWithManagerId.isManager !== isManager) {
+          await trx.employeeAccount.update({
+            where: {
+              email: updatedEmployeeProfile.employeeAccount?.email,
+            },
+            data: {
+              employeeId: null,
+            },
+          });
+          await trx.employeeAccount.update({
+            where: {
+              email,
+            },
+            data: {
+              employeeId: +employeeId,
+            },
+          });
+        }
+      }
+
+      // Check if deliveryId is sent
+      if (deliveryId) {
+        // If yes, check if the employee existed
+        const findRecordWithManagerId = await trx.deliveryEmployee.findUnique({
+          where: {
+            employeeId: +employeeId,
+          },
+        });
+
+        // If yes
+        if (findRecordWithManagerId) {
+          // Case move the employee to another delivery
+          if (deliveryId !== findRecordWithManagerId.deliveryId) {
             if (isManager) {
-              await prisma.deliveryEmployee.updateMany({
+              // So first of all, update all roles of "another delivery" => not manager
+              await trx.deliveryEmployee.updateMany({
                 where: {
                   deliveryId,
+                  isManager: true,
                 },
                 data: {
                   isManager: false,
                 },
               });
-              await prisma.deliveryEmployee.update({
+
+              // Assign role manager for that employee
+              await trx.deliveryEmployee.update({
                 where: {
-                  employeeId: Number(employeeId),
+                  employeeId: +employeeId,
                 },
                 data: {
+                  deliveryId,
                   isManager: true,
                 },
               });
             } else {
-              await prisma.deliveryEmployee.update({
+              // Move employee to another delivery but his role is not manager
+              await trx.deliveryEmployee.update({
                 where: {
-                  employeeId: Number(employeeId),
+                  employeeId: +employeeId,
                 },
                 data: {
+                  deliveryId,
                   isManager: false,
                 },
               });
             }
+          } else {
+            // Still be in the same delivery
+            if (findRecordWithManagerId.isManager !== isManager) {
+              if (isManager) {
+                await trx.deliveryEmployee.updateMany({
+                  where: {
+                    deliveryId,
+                  },
+                  data: {
+                    isManager: false,
+                  },
+                });
+                await trx.deliveryEmployee.update({
+                  where: {
+                    employeeId: +employeeId,
+                  },
+                  data: {
+                    isManager: true,
+                  },
+                });
+              } else {
+                await trx.deliveryEmployee.update({
+                  where: {
+                    employeeId: +employeeId,
+                  },
+                  data: {
+                    isManager: false,
+                  },
+                });
+              }
+            }
           }
-        }
-      } else {
-        // If not find any records with "employeeId" => create new
-        if (isManager) {
-          await prisma.deliveryEmployee.updateMany({
-            where: {
-              deliveryId,
-            },
+        } else {
+          // If not find any records with "employeeId" => create new
+          if (isManager) {
+            await trx.deliveryEmployee.updateMany({
+              where: {
+                deliveryId,
+              },
+              data: {
+                isManager: false,
+              },
+            });
+          }
+          await trx.deliveryEmployee.create({
             data: {
+              employeeId: +employeeId,
+              deliveryId,
               isManager: false,
             },
           });
         }
-        await prisma.deliveryEmployee.create({
-          data: {
-            employeeId: Number(employeeId),
-            deliveryId,
-            isManager: false,
-          },
-        });
       }
-    }
-    return res.status(200).send({ updatedEmployeeProfile });
+    });
+
+    const emailToGetInfo = id === +employeeId ? employeeEmail : null;
+    const employeeInfo = emailToGetInfo
+      ? await getAccountWithEmail(emailToGetInfo)
+      : {};
+    return res.status(200).send(employeeInfo);
   } catch (error) {
     console.log(error);
     return res.status(400).send({ error });
@@ -397,7 +416,7 @@ const deleteEmployeeProfile = async (req: Request, res: Response) => {
     const { employeeId } = req.params;
 
     await prisma.employee.delete({
-      where: { id: Number(employeeId) },
+      where: { id: +employeeId },
     });
     return res.sendStatus(200);
   } catch (error) {

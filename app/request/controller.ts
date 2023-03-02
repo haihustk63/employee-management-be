@@ -206,8 +206,10 @@ const getRequestsWithParams = async ({
     return await prisma.request.findMany({
       where: {
         employeeId,
+        ...whereExtraQuery,
       },
       orderBy: orderBy,
+      ...pageParams,
     });
   } else if (role === DIVISION_MANAGER.value) {
     const currentEmployee = await prisma.employee.findUnique({

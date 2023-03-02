@@ -15,7 +15,7 @@ const login = async (req: Request, res: Response) => {
       .status(STATUS_CODE.BAD_REQUEST)
       .send("Missing email or password");
   }
-  const account = await getAccountWithEmail(email);
+  const account = await getAccountWithEmail(email, true);
 
   if (!account) {
     return res.status(STATUS_CODE.BAD_REQUEST).send("Account does not existed");
@@ -23,7 +23,7 @@ const login = async (req: Request, res: Response) => {
     const isRightPassword = await bcrypt.compare(password, account.password);
     if (!isRightPassword) {
       return res
-        .status(STATUS_CODE.UNAUTHORIZED)
+        .status(STATUS_CODE.BAD_REQUEST)
         .send("Wrong username or password");
     }
   }
@@ -38,12 +38,15 @@ const login = async (req: Request, res: Response) => {
     .send({ status: "success", message: "Logged in", userInfo });
 };
 
-export const getAccountWithEmail = (email: string = "") => {
+export const getAccountWithEmail = (
+  email: string = "",
+  isGetPassword: boolean = false
+) => {
   return prisma.employeeAccount.findUnique({
     where: {
       email,
     },
-    include: {
+    select: {
       employee: {
         include: {
           employeeAccount: {
@@ -53,12 +56,33 @@ export const getAccountWithEmail = (email: string = "") => {
           },
         },
       },
+      candidate: {
+        select: {
+          job: true,
+          interviewer: {
+            select: {
+              firstName: true,
+              middleName: true,
+              lastName: true,
+            },
+          },
+          name: true,
+          email: true,
+          phone: true,
+          appointmentTime: true,
+          cvLink: true,
+        },
+      },
       accountFirebase: {
         select: {
           uid: true,
           googleEmail: true,
         },
       },
+      employeeId: true,
+      email: true,
+      candidateId: true,
+      password: isGetPassword,
     },
   });
 };

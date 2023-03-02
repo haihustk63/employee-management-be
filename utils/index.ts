@@ -1,5 +1,5 @@
 export const transformFileName = (fileName: string) => {
-  return fileName.replace(/[ ]+/g, "-");
+  return encodeURI(fileName);
 };
 
 export const isGetAllRecords = (

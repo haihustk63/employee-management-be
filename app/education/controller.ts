@@ -1,4 +1,5 @@
 import uploadCloud from "@config/cloudinary";
+import { novuHelpers } from "@config/novu";
 import { UPCLOUD_FOLDERS } from "@constants/common";
 import { PrismaClient } from "@prisma/client";
 import dayjs from "dayjs";
@@ -8,8 +9,8 @@ const prisma = new PrismaClient();
 
 const createEducationProgram: RequestHandler = async (req, res, next) => {
   try {
-    const data = JSON.parse(req.body.data);
-    const { tutorId = "", ...rest } = data || {};
+    const data = JSON.parse(req.body.data || "{}");
+    const { tutorId = "", ...rest } = data;
 
     let dataToSave = { ...rest };
     if (req.files) {
@@ -26,6 +27,9 @@ const createEducationProgram: RequestHandler = async (req, res, next) => {
       dataToSave = { ...dataToSave, materials: materialUrls };
     }
 
+    const { title, time } = dataToSave;
+    if (!title || !time) return res.sendStatus(400);
+
     const newProgram = await prisma.educationProgram.create({
       data: dataToSave,
     });
@@ -39,6 +43,12 @@ const createEducationProgram: RequestHandler = async (req, res, next) => {
         },
       });
     }
+
+    novuHelpers.broadCastNotification("education-program", {
+      ...newProgram,
+      path: "/education-programs/list",
+    });
+
     return res.status(200).send(newProgram);
   } catch (err) {
     next(err);
@@ -46,79 +56,152 @@ const createEducationProgram: RequestHandler = async (req, res, next) => {
 };
 
 const getAllEducationPrograms: RequestHandler = async (req, res, next) => {
-  const { keyword } = req.query;
+  try {
+    const { page = 1, limit = 10 } = req.query;
+    const allPrograms = await getAllEducationProgramsWithParams(
+      req.query,
+      false
+    );
+    const allProgramsLimit = await getAllEducationProgramsWithParams(req.query);
+    const resPrograms = transformPrograms(allProgramsLimit);
+
+    return res.status(200).send({
+      data: resPrograms,
+      page: +page,
+      limit: +limit,
+      total: allPrograms.length,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+const getAllEducationProgramsWithParams = (
+  query: any,
+  withLimit: boolean = true
+) => {
+  const { keyword, page = 1, limit = 10 } = query;
   const whereExtraQuery: any = {};
+  const extraParams: any = {};
   if (keyword) {
     whereExtraQuery.title = {
       contains: keyword,
     };
   }
 
-  try {
-    const programs = await prisma.educationProgram.findMany({
-      where: whereExtraQuery,
-      include: {
-        employees: {
-          select: {
-            isTutor: true,
-            rate: true,
-            employee: {
-              select: {
-                id: true,
-                firstName: true,
-                lastName: true,
-                middleName: true,
-              },
+  if (withLimit) {
+    extraParams.take = +limit;
+    extraParams.skip = +limit * (+page - 1);
+  }
+
+  return prisma.educationProgram.findMany({
+    where: whereExtraQuery,
+    include: {
+      employees: {
+        select: {
+          isTutor: true,
+          rate: true,
+          employee: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              middleName: true,
             },
           },
         },
       },
-    });
-
-    const resPrograms = transformPrograms(programs);
-
-    return res.status(200).send({ allPrograms: resPrograms });
-  } catch (err) {
-    next(err);
-  }
+    },
+    ...extraParams,
+    orderBy: {
+      time: "desc",
+    },
+  });
 };
 
 const getMyEducationPrograms: RequestHandler = async (req, res, next) => {
   try {
     const { id: employeeId } = res.getHeader("user") as any;
-    const records = await prisma.employeeEducation.findMany({
-      where: {
-        employeeId,
+    const { page = 1, limit = 10 } = req.query;
+
+    const myPrograms = await getMyEducationProgramsWithParams(
+      req.query,
+      employeeId,
+      false
+    );
+    const myProgramsLimit = await getMyEducationProgramsWithParams(
+      req.query,
+      employeeId
+    );
+
+    const resPrograms = transformPrograms(
+      myProgramsLimit.map((p: any) => p.program)
+    );
+
+    return res.status(200).send({
+      data: resPrograms,
+      page: +page,
+      limit: +limit,
+      total: myPrograms.length,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+const getMyEducationProgramsWithParams = (
+  query: any,
+  employeeId: number,
+  withLimit: boolean = true
+) => {
+  const { keyword, page = 1, limit = 10 } = query;
+  const whereExtraQuery: any = {};
+  const extraParams: any = {};
+  if (keyword) {
+    whereExtraQuery.program = {
+      title: {
+        contains: keyword,
       },
-      include: {
-        program: {
-          include: {
-            employees: {
-              select: {
-                isTutor: true,
-                rate: true,
-                employee: {
-                  select: {
-                    id: true,
-                    firstName: true,
-                    lastName: true,
-                    middleName: true,
-                  },
+    };
+  }
+
+  if (withLimit) {
+    extraParams.take = +limit;
+    extraParams.skip = +limit * (+page - 1);
+  }
+
+  return prisma.employeeEducation.findMany({
+    where: {
+      employeeId,
+      ...whereExtraQuery,
+    },
+    include: {
+      program: {
+        include: {
+          employees: {
+            select: {
+              isTutor: true,
+              rate: true,
+              employee: {
+                select: {
+                  id: true,
+                  firstName: true,
+                  lastName: true,
+                  middleName: true,
                 },
               },
             },
           },
         },
       },
-    });
-
-    const myPrograms = records.map((record) => record.program);
-    const resPrograms = transformPrograms(myPrograms);
-
-    return res.status(200).send({ allPrograms: resPrograms });
-  } catch (err) {
-    next(err);
-  }
+    },
+    ...extraParams,
+    orderBy: {
+      program: {
+        time: "desc",
+      },
+    },
+  });
 };
 
 const transformPrograms = (programs: any[]) => {
@@ -191,7 +274,7 @@ const updateEducationProgram: RequestHandler = async (req, res, next) => {
   try {
     const { programId: id } = req.params;
     const programId = parseInt(id);
-    const data = JSON.parse(req.body.data);
+    const data = JSON.parse(req.body.data || "{}");
     const { tutorId = "", deleteMaterialList = [], ...rest } = data || {};
     let dataToSave = { ...rest };
     let newMaterials = [];
@@ -223,8 +306,6 @@ const updateEducationProgram: RequestHandler = async (req, res, next) => {
         materials: [...newMaterials, ...materialUrls],
       };
     }
-
-    console.log(dataToSave);
 
     const updatedProgram = await prisma.educationProgram.update({
       where: {

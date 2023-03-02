@@ -7,25 +7,29 @@ const createNewDelivery = async (req: Request, res: Response) => {
   try {
     const { data } = req.body;
     const { name, description, managerId } = data;
-    const newDelivery = await prisma.delivery.create({
-      data: {
-        name,
-        description,
-      },
-    });
-
-    if (managerId) {
-      const deliveryId = newDelivery.id;
-      await prisma.deliveryEmployee.create({
+    await prisma.$transaction(async (trx: any) => {
+      const newDelivery = await trx.delivery.create({
         data: {
-          deliveryId,
-          employeeId: managerId,
-          isManager: true,
+          name,
+          description,
         },
       });
-    }
-    return res.status(200).send({ newDelivery });
+
+      if (managerId) {
+        const deliveryId = newDelivery.id;
+        await trx.deliveryEmployee.create({
+          data: {
+            deliveryId,
+            employeeId: managerId,
+            isManager: true,
+          },
+        });
+      }
+    });
+
+    return res.sendStatus(201);
   } catch (error: any) {
+    console.log(error);
     return res.sendStatus(400);
   }
 };
@@ -47,16 +51,16 @@ const updateDelivery = async (req: Request, res: Response) => {
 
     if (managerId) {
       // Find the record with term "managerId"
-      const findRecordWithManagerId = await prisma.deliveryEmployee.findUnique({
+      const recordWithManagerId = await prisma.deliveryEmployee.findUnique({
         where: {
           employeeId: managerId,
         },
       });
 
       // If found
-      if (findRecordWithManagerId) {
+      if (recordWithManagerId) {
         // If the current role with that id is not manager
-        if (!findRecordWithManagerId?.isManager) {
+        if (!recordWithManagerId?.isManager) {
           // Change the current manager of that delivery -> not manager
           await prisma.deliveryEmployee.updateMany({
             where: {

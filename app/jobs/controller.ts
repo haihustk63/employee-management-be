@@ -1,4 +1,3 @@
-import { sendEmail } from "@config/mailtrap";
 import { PrismaClient, Prisma } from "@prisma/client";
 import { Request, Response } from "express";
 
@@ -36,7 +35,7 @@ const getJobsWithParams = (query: any, withLimit: boolean = true) => {
 
   return prisma.$queryRaw`
       SELECT job.id, job.title, job.type_of_job as typeOfJob, job.level, job.up_to as upTo, 
-      job.job_detail as job_detail, job.position_id as positionId, position.name as positionName 
+      job.job_detail as jobDetail, job.position_id as positionId, position.name as positionName 
       FROM job INNER JOIN position
       ON job.position_id = position.id
       WHERE 1

@@ -139,9 +139,9 @@ const getCheckInOutList = async (req: Request, res: Response) => {
       }
     });
 
-    const response = Array.from(infoMap.values());
+    const resData = Array.from(infoMap.values());
 
-    return res.status(STATUS_CODE.SUCCESS).send(response);
+    return res.status(STATUS_CODE.SUCCESS).send({ data: resData });
   } catch (error) {
     console.log(error);
   }
@@ -150,6 +150,10 @@ const getCheckInOutList = async (req: Request, res: Response) => {
 const getCheckInOutTimesheet = async (req: Request, res: Response) => {
   try {
     const { id: employeeId } = res.getHeader("user") as any;
+    const currentDate = new Date();
+    const currentMonth = currentDate.getMonth();
+    const currentYear = currentDate.getFullYear();
+    const { month = currentMonth, year = currentYear } = req.query;
     const checkInOutRecords = await prisma.checkInOut.findMany({
       where: {
         employeeId,
@@ -172,7 +176,7 @@ const getCheckInOutTimesheet = async (req: Request, res: Response) => {
     );
 
     const lastResult = groupData.map(workingTime);
-    const total = dayjs().daysInMonth();
+    const total = dayjs().set("month", +month).set("year", +year).daysInMonth();
 
     return res.status(STATUS_CODE.SUCCESS).send({ data: lastResult, total });
   } catch (error) {
@@ -188,7 +192,7 @@ const getRecordsByQuery = (query: any, records: any[]) => {
 
   return records.filter((record: any) => {
     const date = new Date(record.time ?? record.date);
-    return date.getMonth() === month && date.getFullYear() === year;
+    return date.getMonth() === +month && date.getFullYear() === +year;
   });
 };
 

@@ -13,3 +13,6 @@ export const nodeMailerPass = process.env.NODE_MAILER_PASS || "";
 export const cloudinaryName = process.env.CLOUDINARY_NAME || "";
 export const cloudinaryKey = process.env.CLOUDINARY_KEY || "";
 export const cloudinarySecret = process.env.CLOUDINARY_SECRET || "";
+
+//
+export const novuApiKey = process.env.NOVU_API_KEY || "";

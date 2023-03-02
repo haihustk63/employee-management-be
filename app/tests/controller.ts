@@ -2,6 +2,7 @@ import { PrismaClient } from "@prisma/client";
 import { Request, RequestHandler, Response } from "express";
 import { sendEmail } from "@config/mailtrap";
 import { ROLES, TEST_STATUS, QUESTION_TYPES } from "@constants/common";
+import { generateSubmitTestEmail } from "@config/mail-template/submit-test";
 
 const { CANDIDATE, EMPLOYEE, DIVISION_MANAGER, ADMIN, SUPER_ADMIN } = ROLES;
 const { created, attempting, done } = TEST_STATUS;
@@ -206,7 +207,11 @@ const getAllTests = async (req: Request, res: Response) => {
   try {
     const tests = await prisma.skillTest.findMany({
       include: {
-        testQuestionSkillTest: true,
+        testQuestionSkillTest: {
+          include: {
+            question: true,
+          },
+        },
         skillTestAccount: true,
       },
     });
@@ -243,71 +248,7 @@ const getContestantTest = async (req: Request, res: Response) => {
 
     const includeAnswer = role === CANDIDATE.value ? false : true;
 
-    const test = await prisma.skillTestAccount.findUnique({
-      where: {
-        id: testId,
-      },
-      include: {
-        test: {
-          include: {
-            testQuestionSkillTest: {
-              include: {
-                question: {
-                  select: {
-                    options: true,
-                    questionSource: true,
-                    questionText: true,
-                    type: true,
-                    answer: includeAnswer,
-                  },
-                },
-              },
-            },
-          },
-        },
-        skillTestSessionAnswer: {
-          include: {
-            question: true,
-          },
-        },
-        account: {
-          select: {
-            candidate: {
-              select: {
-                email: true,
-                name: true,
-                job: {
-                  select: {
-                    title: true,
-                  },
-                },
-              },
-            },
-            employee: {
-              select: {
-                firstName: true,
-                middleName: true,
-                lastName: true,
-                position: {
-                  select: {
-                    name: true,
-                  },
-                },
-                deliveryEmployee: {
-                  select: {
-                    delivery: {
-                      select: {
-                        name: true,
-                      },
-                    },
-                  },
-                },
-              },
-            },
-          },
-        },
-      },
-    });
+    const test = await getContestantTestQuery({ testId, includeAnswer });
 
     if (role === CANDIDATE.value) {
       if (test?.email !== email) {
@@ -351,9 +292,76 @@ const getContestantTest = async (req: Request, res: Response) => {
   }
 };
 
+const getContestantTestQuery = ({ testId, includeAnswer }: any) => {
+  return prisma.skillTestAccount.findUnique({
+    where: {
+      id: testId,
+    },
+    include: {
+      test: {
+        include: {
+          testQuestionSkillTest: {
+            include: {
+              question: {
+                select: {
+                  options: true,
+                  questionSource: true,
+                  questionText: true,
+                  type: true,
+                  answer: includeAnswer,
+                },
+              },
+            },
+          },
+        },
+      },
+      skillTestSessionAnswer: {
+        include: {
+          question: true,
+        },
+      },
+      account: {
+        select: {
+          candidate: {
+            select: {
+              email: true,
+              name: true,
+              job: {
+                select: {
+                  title: true,
+                },
+              },
+            },
+          },
+          employee: {
+            select: {
+              firstName: true,
+              middleName: true,
+              lastName: true,
+              position: {
+                select: {
+                  name: true,
+                },
+              },
+              deliveryEmployee: {
+                select: {
+                  delivery: {
+                    select: {
+                      name: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  });
+};
+
 const assignContestantTest: RequestHandler = async (req, res, next) => {
   const { email, testId } = req.body.data || {};
-  console.log(email, testId);
 
   if (!email || !testId) {
     return res.sendStatus(400);
@@ -519,13 +527,29 @@ const submitTest = async (req: Request, res: Response) => {
       }
     });
 
-    await prisma.skillTestAccount.update({
+    const testResult = await prisma.skillTestAccount.update({
       where: {
         id: testId,
       },
       data: {
         score,
         status: done.value,
+      },
+      select: {
+        test: {
+          include: {
+            testQuestionSkillTest: {
+              include: {
+                question: {
+                  select: {
+                    type: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+        score: true,
       },
     });
 
@@ -541,10 +565,20 @@ const submitTest = async (req: Request, res: Response) => {
       email = account?.candidate?.email;
     }
 
+    const essayQuestions = testResult.test.testQuestionSkillTest.filter(
+      (question) => question.question.type === QUESTION_TYPES.essays.value
+    );
+
     await sendEmail({
       to: email,
       subject: "You have submitted the test successfully",
-      text: "Congratulations! You have successfully submitted the test!",
+      html: generateSubmitTestEmail({
+        title: testResult.test.title,
+        duration: testResult.test.duration,
+        questionCount: testResult.test.testQuestionSkillTest.length,
+        essayQuestionCount: essayQuestions.length,
+        score: testResult.score,
+      }),
     });
     return res.status(200).send("OK");
   } catch (error: any) {

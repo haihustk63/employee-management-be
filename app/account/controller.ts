@@ -1,3 +1,4 @@
+import { generateNewAccountEmail } from "@config/mail-template/new-account";
 import { sendEmail } from "@config/mailtrap";
 import { PASSWORD_SALT_ROUNDS } from "@constants/index";
 import { PrismaClient } from "@prisma/client";
@@ -114,8 +115,12 @@ const createNewAccount: RequestHandler = async (req, res, next) => {
       if (candidate) {
         sendEmail({
           to: candidate?.email,
-          subject: "New account",
-          text: `Your account is ${email} and password is ${password}`,
+          subject: "A new account has been created for you",
+          html: generateNewAccountEmail({
+            name: candidate.name,
+            email,
+            password,
+          }),
         });
       }
     }
@@ -208,9 +213,8 @@ const deleteAccount = async (req: Request, res: Response) => {
 
 const changePassword = async (req: Request, res: Response) => {
   try {
-    const {
-      employeeAccount: { email },
-    } = res.getHeader("user") as any;
+    const user = res.getHeader("user") as any;
+    const email = user.email ?? user.employeeAccount?.email;
 
     const { oldPassword, newPassword } = req.body.data || {};
 
@@ -244,6 +248,7 @@ const changePassword = async (req: Request, res: Response) => {
 
     return res.sendStatus(200);
   } catch (error) {
+    console.log(error);
     return res.status(400).send({ error });
   }
 };

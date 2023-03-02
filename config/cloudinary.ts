@@ -11,23 +11,35 @@ cloudinary.config({
 
 const uploadCloud = {
   normal: async ({ file, folder }: any) => {
-    const result = await cloudinary.uploader.upload(file.path, {
-      folder,
-      public_id: transformFileName(file.originalname) + Date.now().toString(),
-    });
-    fs.unlinkSync(file.path);
-    return { url: result.secure_url };
+    try {
+      const result = await cloudinary.uploader.upload(file.path, {
+        folder,
+        public_id: transformFileName(file.originalname) + Date.now().toString(),
+      });
+      return { url: result.secure_url };
+    } catch (e: any) {
+      console.log(e);
+      throw new Error();
+    } finally {
+      fs.unlinkSync(file.path);
+    }
   },
 
   useConvert: async ({ file, folder }: any) => {
-    const result = await cloudinary.uploader.upload(file.path, {
-      folder,
-      public_id: transformFileName(file.originalname) + Date.now().toString(),
-      resource_type: "raw",
-      raw_convert: "aspose",
-    });
-    fs.unlinkSync(file.path);
-    return { url: result.secure_url };
+    try {
+      const result = await cloudinary.uploader.upload(file.path, {
+        folder,
+        public_id: transformFileName(file.originalname) + Date.now().toString(),
+        resource_type: "raw",
+        raw_convert: "aspose",
+      });
+      return { url: result.secure_url };
+    } catch (e: any) {
+      console.log(e);
+      throw new Error(e);
+    } finally {
+      fs.unlinkSync(file.path);
+    }
   },
 };
 

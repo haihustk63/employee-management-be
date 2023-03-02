@@ -6,7 +6,6 @@ import {
   accountRouter,
   candidateApplyRouter,
   checkInOutRouter,
-  constantRouter,
   deliveryRouter,
   educationRouter,
   employeeProfileRouter,
@@ -19,6 +18,7 @@ import {
   testTopicRouter,
   statisticsRouter,
   firebaseAccountRouter,
+  notificationTopicRouter,
 } from "@app/index";
 import { errorHandler } from "@middleware/error-handler";
 import { appPort } from "@config/index";
@@ -50,7 +50,6 @@ app.use(
   positionRouter,
   testTopicRouter,
   testQuestionRouter,
-  constantRouter,
   loginRouter,
   testsRouter,
   checkInOutRouter,
@@ -59,6 +58,7 @@ app.use(
   educationRouter,
   statisticsRouter,
   firebaseAccountRouter,
+  notificationTopicRouter,
   errorHandler
 );
 

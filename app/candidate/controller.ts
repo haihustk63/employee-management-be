@@ -3,6 +3,8 @@ import { PrismaClient } from "@prisma/client";
 import { Request, Response } from "express";
 
 import { ASSESSMENT, TEST_STATUS } from "@constants/common";
+import { generateFailInterviewEmail } from "@config/mail-template/fail-interview";
+import { generatePassInterviewEmail } from "@config/mail-template/pass-interview";
 
 const { considering, failed, good, notGood, passed } = ASSESSMENT;
 const { attempting, created, done } = TEST_STATUS;
@@ -145,6 +147,13 @@ const updateApplication = async (req: Request, res: Response) => {
         where: {
           id: Number(candidateId),
         },
+        include: {
+          job: {
+            select: {
+              title: true,
+            },
+          },
+        },
       });
 
       if (candidate) {
@@ -152,14 +161,20 @@ const updateApplication = async (req: Request, res: Response) => {
         if (assessment === failed.value) {
           sendEmail({
             to: email,
-            subject: "Sorry",
-            text: "We are so sorry because your experience does not meet our needs",
+            subject: "Thank you for your time",
+            html: generateFailInterviewEmail({
+              name: candidate.name,
+              jobTitle: candidate.job?.title,
+            }),
           });
         } else {
           sendEmail({
             to: email,
-            subject: "Congratulations",
-            text: "We are so pleasure to inform that you have passed our interview process",
+            subject: "Thank you for your time",
+            html: generatePassInterviewEmail({
+              name: candidate.name,
+              jobTitle: candidate.job?.title,
+            }),
           });
         }
       }
