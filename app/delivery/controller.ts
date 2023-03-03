@@ -1,9 +1,9 @@
-import { Request, Response } from "express";
+import { Request, RequestHandler, Response } from "express";
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-const createNewDelivery = async (req: Request, res: Response) => {
+const createNewDelivery: RequestHandler = async (req, res, next) => {
   try {
     const { data } = req.body;
     const { name, description, managerId } = data;
@@ -29,12 +29,11 @@ const createNewDelivery = async (req: Request, res: Response) => {
 
     return res.sendStatus(201);
   } catch (error: any) {
-    console.log(error);
-    return res.sendStatus(400);
+    next(error);
   }
 };
 
-const updateDelivery = async (req: Request, res: Response) => {
+const updateDelivery: RequestHandler = async (req, res, next) => {
   try {
     const { data } = req.body;
     const { deliveryId } = req.params;
@@ -105,12 +104,11 @@ const updateDelivery = async (req: Request, res: Response) => {
     }
     return res.status(200).send({ updatedDelivery });
   } catch (error: any) {
-    console.log(error);
-    return res.sendStatus(400);
+    next(error);
   }
 };
 
-const getAllDeliveries = async (req: Request, res: Response) => {
+const getAllDeliveries: RequestHandler = async (req, res, next) => {
   try {
     const allDeliveries = await prisma.delivery.findMany({
       include: {
@@ -133,11 +131,11 @@ const getAllDeliveries = async (req: Request, res: Response) => {
 
     return res.status(200).send({ allDeliveries });
   } catch (error: any) {
-    return res.sendStatus(400);
+    next(error);
   }
 };
 
-const deleteDelivery = async (req: Request, res: Response) => {
+const deleteDelivery: RequestHandler = async (req, res, next) => {
   try {
     const { deliveryId } = req.params;
 
@@ -149,7 +147,7 @@ const deleteDelivery = async (req: Request, res: Response) => {
 
     return res.sendStatus(200);
   } catch (error: any) {
-    return res.status(400).send(error.message);
+    next(error);
   }
 };
 

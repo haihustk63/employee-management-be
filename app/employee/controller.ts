@@ -2,30 +2,34 @@ import uploadCloud from "@config/cloudinary";
 import { novuHelpers } from "@config/novu";
 import { ROLES, SORT_ORDER, UPCLOUD_FOLDERS } from "@constants/common";
 import { Prisma, PrismaClient } from "@prisma/client";
-import { Request, Response } from "express";
+import { Request, RequestHandler, Response } from "express";
 import { getAccountWithEmail } from "@app/login-out/controller";
 
 const roleAdmin = [ROLES.ADMIN.value, ROLES.SUPER_ADMIN.value];
 
 const prisma = new PrismaClient();
 
-const getAllEmployeeProfile = async (req: Request, res: Response) => {
-  let { limit = 10, page = 1 } = req.query as any;
+const getAllEmployeeProfile: RequestHandler = async (req, res, next) => {
+  try {
+    let { limit = 10, page = 1 } = req.query as any;
 
-  const employees: any = await getEmployeeWithParams(req.query, true);
-  const employeesWithoutLimit: any = await getEmployeeWithParams(
-    req.query,
-    false
-  );
+    const employees: any = await getEmployeeWithParams(req.query, true);
+    const employeesWithoutLimit: any = await getEmployeeWithParams(
+      req.query,
+      false
+    );
 
-  const result = {
-    page: +page,
-    limit: +limit,
-    data: employees,
-    total: employeesWithoutLimit?.length,
-  };
+    const result = {
+      page: +page,
+      limit: +limit,
+      data: employees,
+      total: employeesWithoutLimit?.length,
+    };
 
-  return res.status(200).send(result);
+    return res.status(200).send(result);
+  } catch (error) {
+    next(error);
+  }
 };
 
 const getEmployeeWithParams = (query: any, withLimit: boolean) => {
@@ -98,7 +102,7 @@ const getEmployeeWithParams = (query: any, withLimit: boolean) => {
   `;
 };
 
-const getOneEmployeeProfile = async (req: Request, res: Response) => {
+const getOneEmployeeProfile: RequestHandler = async (req, res, next) => {
   try {
     const { employeeId } = req.params;
     const employeeProfile = await prisma.employee.findUnique({
@@ -127,11 +131,11 @@ const getOneEmployeeProfile = async (req: Request, res: Response) => {
     });
     return res.status(200).send({ employeeProfile });
   } catch (error) {
-    return res.status(400).send({ error });
+    next(error);
   }
 };
 
-const createNewEmployeeProfile = async (req: Request, res: Response) => {
+const createNewEmployeeProfile: RequestHandler = async (req, res, next) => {
   try {
     const data = JSON.parse(req.body.data || "{}");
     const deliveryId = data?.deliveryId;
@@ -192,22 +196,22 @@ const createNewEmployeeProfile = async (req: Request, res: Response) => {
 
     return res.status(200).send({ newEmployeeProfile });
   } catch (error) {
-    return res.status(400).send({ error });
+    next(error);
   }
 };
 
-const createManyEmployeeProfile = async (req: Request, res: Response) => {
+const createManyEmployeeProfile: RequestHandler = async (req, res, next) => {
   try {
     const { data } = req.body;
 
     const newEmployeeProfile = await prisma.employee.createMany({ data });
     return res.status(200).send({ newEmployeeProfile });
   } catch (error) {
-    return res.status(400).send({ error });
+    next(error);
   }
 };
 
-const updateEmployeeProfile = async (req: Request, res: Response) => {
+const updateEmployeeProfile: RequestHandler = async (req, res, next) => {
   try {
     const {
       employeeAccount: { email: employeeEmail },
@@ -406,12 +410,11 @@ const updateEmployeeProfile = async (req: Request, res: Response) => {
       : {};
     return res.status(200).send(employeeInfo);
   } catch (error) {
-    console.log(error);
-    return res.status(400).send({ error });
+    next(error);
   }
 };
 
-const deleteEmployeeProfile = async (req: Request, res: Response) => {
+const deleteEmployeeProfile: RequestHandler = async (req, res, next) => {
   try {
     const { employeeId } = req.params;
 
@@ -420,7 +423,7 @@ const deleteEmployeeProfile = async (req: Request, res: Response) => {
     });
     return res.sendStatus(200);
   } catch (error) {
-    return res.status(400).send({ error });
+    next(error);
   }
 };
 

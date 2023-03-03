@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+import { Request, RequestHandler, Response } from "express";
 import { PrismaClient } from "@prisma/client";
 import { CHECK_IN_OUT_TYPE, ROLES, SORT_ORDER } from "@constants/common";
 import { REQUEST_STATUS } from "@constants/common";
@@ -24,7 +24,7 @@ const prisma = new PrismaClient();
 
 const undefinedItem = "X";
 
-const createNewRequest = async (req: Request, res: Response) => {
+const createNewRequest: RequestHandler = async (req, res, next) => {
   try {
     const { data } = req.body;
     const { date, type } = data;
@@ -51,8 +51,7 @@ const createNewRequest = async (req: Request, res: Response) => {
 
     return res.status(200).send(newRequest);
   } catch (error: any) {
-    console.log(error);
-    return res.sendStatus(400);
+    next(error);
   }
 };
 
@@ -90,7 +89,7 @@ const checkSameTypeRequest = async ({ employeeId, type, date }: any) => {
   return false;
 };
 
-const getRequests = async (req: Request, res: Response) => {
+const getRequests: RequestHandler = async (req, res, next) => {
   try {
     const role = res.getHeader("role");
     const { id: employeeId } = res.getHeader("user") as any;
@@ -119,8 +118,7 @@ const getRequests = async (req: Request, res: Response) => {
 
     return res.status(200).send(response);
   } catch (error: any) {
-    console.log(error);
-    return res.sendStatus(400);
+    next(error);
   }
 };
 
@@ -264,7 +262,7 @@ const getRequestsWithParams = async ({
   }
 };
 
-const updateRequest = async (req: Request, res: Response) => {
+const updateRequest: RequestHandler = async (req, res, next) => {
   try {
     const { status, isCancelled } = req.body.data || {};
     const { requestId: id } = req.params;
@@ -409,8 +407,7 @@ const updateRequest = async (req: Request, res: Response) => {
     }
     return res.sendStatus(200);
   } catch (error: any) {
-    console.log(error);
-    return res.sendStatus(400);
+    next(error);
   }
 };
 
@@ -457,7 +454,7 @@ const updateCheckInOut = async ({ request, type }: any) => {
   }
 };
 
-const deleteRequest = async (req: Request, res: Response) => {
+const deleteRequest: RequestHandler = async (req, res, next) => {
   try {
     const { requestId } = req.params;
     await prisma.request.delete({
@@ -467,12 +464,11 @@ const deleteRequest = async (req: Request, res: Response) => {
     });
     return res.sendStatus(200);
   } catch (error: any) {
-    console.log(error);
-    return res.sendStatus(400);
+    next(error);
   }
 };
 
-const getOneRequest = async (req: Request, res: Response) => {
+const getOneRequest: RequestHandler = async (req, res, next) => {
   try {
     const { requestId } = req.params;
 
@@ -484,7 +480,7 @@ const getOneRequest = async (req: Request, res: Response) => {
 
     return res.status(200).send(request);
   } catch (error: any) {
-    return res.sendStatus(400);
+    next(error);
   }
 };
 

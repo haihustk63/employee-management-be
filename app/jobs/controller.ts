@@ -1,9 +1,9 @@
 import { PrismaClient, Prisma } from "@prisma/client";
-import { Request, Response } from "express";
+import { Request, RequestHandler, Response } from "express";
 
 const prisma = new PrismaClient();
 
-const createJob = async (req: Request, res: Response) => {
+const createJob: RequestHandler = async (req, res, next) => {
   try {
     const { data } = req.body;
     const job = await prisma.job.create({
@@ -11,23 +11,27 @@ const createJob = async (req: Request, res: Response) => {
     });
     return res.status(200).send(job);
   } catch (err) {
-    console.error(err);
+    next(err);
   }
 };
 
-const getAllJobs = async (req: Request, res: Response) => {
-  const { page = 1, limit = 10 } = req.query;
+const getAllJobs: RequestHandler = async (req, res, next) => {
+  try {
+    const { page = 1, limit = 10 } = req.query;
 
-  const jobs = await getJobsWithParams(req.query);
-  const jobsWithoutLimit: any = await getJobsWithParams(req.query, false);
+    const jobs = await getJobsWithParams(req.query);
+    const jobsWithoutLimit: any = await getJobsWithParams(req.query, false);
 
-  const response = {
-    page: +page,
-    limit: +limit,
-    data: jobs,
-    total: jobsWithoutLimit?.length,
-  };
-  return res.status(200).send(response);
+    const response = {
+      page: +page,
+      limit: +limit,
+      data: jobs,
+      total: jobsWithoutLimit?.length,
+    };
+    return res.status(200).send(response);
+  } catch (err) {
+    next(err);
+  }
 };
 
 const getJobsWithParams = (query: any, withLimit: boolean = true) => {
@@ -52,7 +56,7 @@ const getJobsWithParams = (query: any, withLimit: boolean = true) => {
     `;
 };
 
-const getJobById = async (req: Request, res: Response) => {
+const getJobById: RequestHandler = async (req, res, next) => {
   try {
     const { jobId } = req.params;
     if (!jobId) {
@@ -73,11 +77,11 @@ const getJobById = async (req: Request, res: Response) => {
     });
     return res.status(200).send(job);
   } catch (err) {
-    console.error(err);
+    next(err);
   }
 };
 
-const updateJob = async (req: Request, res: Response) => {
+const updateJob: RequestHandler = async (req, res, next) => {
   try {
     const { jobId } = req.params;
     const { data } = req.body;
@@ -91,11 +95,11 @@ const updateJob = async (req: Request, res: Response) => {
 
     return res.status(200).send(job);
   } catch (err) {
-    console.error(err);
+    next(err);
   }
 };
 
-const deleteJob = async (req: Request, res: Response) => {
+const deleteJob: RequestHandler = async (req, res, next) => {
   try {
     const { jobId } = req.params;
 
@@ -107,7 +111,7 @@ const deleteJob = async (req: Request, res: Response) => {
 
     return res.status(200).send("OK");
   } catch (err) {
-    console.error(err);
+    next(err);
   }
 };
 

@@ -27,12 +27,12 @@ const app: Express = express();
 
 const corsOption = {
   optionsSuccessStatus: 200,
-  // origin: [
-  //   "http://localhost:5173",
-  //   "http://127.0.0.1:5173",
-  //   "http://127.0.0.1:3000",
-  //   "http://localhost:3000",
-  // ],
+  origin: [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://127.0.0.1:3000",
+    "http://localhost:3000",
+  ],
   credentials: true,
 };
 

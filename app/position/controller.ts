@@ -1,28 +1,28 @@
-import { Request, Response } from "express";
+import { Request, RequestHandler, Response } from "express";
 import { Prisma, PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-const createNewPosition = async (req: Request, res: Response) => {
+const createNewPosition: RequestHandler = async (req, res, next) => {
   try {
     const { data } = req.body;
     const newPosition = await prisma.position.create({ data });
     return res.status(200).send({ newPosition });
   } catch (error: any) {
-    return res.sendStatus(400);
+    next(error);
   }
 };
 
-const getAllPositions = async (req: Request, res: Response) => {
+const getAllPositions: RequestHandler = async (req, res, next) => {
   try {
     const allPositions = await prisma.position.findMany();
     return res.status(200).send({ allPositions });
   } catch (error: any) {
-    return res.sendStatus(400);
+    next(error);
   }
 };
 
-const updatePosition = async (req: Request, res: Response) => {
+const updatePosition: RequestHandler = async (req, res, next) => {
   try {
     const { positionId } = req.params;
     const { data } = req.body;
@@ -35,12 +35,11 @@ const updatePosition = async (req: Request, res: Response) => {
     });
     return res.status(200).send({ updatedPosition });
   } catch (error: any) {
-    console.log(error)
-    return res.sendStatus(400);
+    next(error);
   }
 };
 
-const deletePosition = async (req: Request, res: Response) => {
+const deletePosition: RequestHandler = async (req, res, next) => {
   try {
     const { positionId } = req.params;
 
@@ -51,7 +50,7 @@ const deletePosition = async (req: Request, res: Response) => {
     });
     return res.status(200).send("OK");
   } catch (error: any) {
-    return res.sendStatus(400);
+    next(error);
   }
 };
 

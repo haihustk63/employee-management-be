@@ -1,5 +1,5 @@
 import { PrismaClient } from "@prisma/client";
-import { Request, Response } from "express";
+import { Request, RequestHandler, Response } from "express";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { serialize } from "cookie";
@@ -8,34 +8,40 @@ import { STATUS_CODE } from "@constants/common";
 
 const prisma = new PrismaClient();
 
-const login = async (req: Request, res: Response) => {
-  const { email, password } = req.body.data;
-  if (!email || !password) {
-    return res
-      .status(STATUS_CODE.BAD_REQUEST)
-      .send("Missing email or password");
-  }
-  const account = await getAccountWithEmail(email, true);
-
-  if (!account) {
-    return res.status(STATUS_CODE.BAD_REQUEST).send("Account does not existed");
-  } else {
-    const isRightPassword = await bcrypt.compare(password, account.password);
-    if (!isRightPassword) {
+const login: RequestHandler = async (req, res, next) => {
+  try {
+    const { email, password } = req.body.data;
+    if (!email || !password) {
       return res
         .status(STATUS_CODE.BAD_REQUEST)
-        .send("Wrong username or password");
+        .send("Missing email or password");
     }
-  }
+    const account = await getAccountWithEmail(email, true);
 
-  const userInfo: any = { ...account };
-  delete userInfo.password;
-  const token = createToken(userInfo);
-  const serialized = createSerialized(token);
-  res.setHeader("Set-Cookie", serialized);
-  return res
-    .status(STATUS_CODE.SUCCESS)
-    .send({ status: "success", message: "Logged in", userInfo });
+    if (!account) {
+      return res
+        .status(STATUS_CODE.BAD_REQUEST)
+        .send("Account does not existed");
+    } else {
+      const isRightPassword = await bcrypt.compare(password, account.password);
+      if (!isRightPassword) {
+        return res
+          .status(STATUS_CODE.BAD_REQUEST)
+          .send("Wrong username or password");
+      }
+    }
+
+    const userInfo: any = { ...account };
+    delete userInfo.password;
+    const token = createToken(userInfo);
+    const serialized = createSerialized(token);
+    res.setHeader("Set-Cookie", serialized);
+    return res
+      .status(STATUS_CODE.SUCCESS)
+      .send({ status: "success", message: "Logged in", userInfo });
+  } catch (error) {
+    next(error);
+  }
 };
 
 export const getAccountWithEmail = (
@@ -113,7 +119,7 @@ export const createDeactiveToken = () => {
   });
 };
 
-const logout = (req: Request, res: Response) => {
+const logout: RequestHandler = async (req, res, next) => {
   try {
     const { token } = req.cookies;
     if (!token) {
@@ -127,7 +133,7 @@ const logout = (req: Request, res: Response) => {
       message: "Logged out",
     });
   } catch (err: any) {
-    return res.status(STATUS_CODE.SERVER_ERROR).send(err.message);
+    next(err);
   }
 };
 

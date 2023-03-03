@@ -1,6 +1,6 @@
 import { sendEmail } from "@config/mailtrap";
 import { PrismaClient } from "@prisma/client";
-import { Request, Response } from "express";
+import { Request, RequestHandler, Response } from "express";
 
 import { ASSESSMENT, TEST_STATUS } from "@constants/common";
 import { generateFailInterviewEmail } from "@config/mail-template/fail-interview";
@@ -11,30 +11,34 @@ const { attempting, created, done } = TEST_STATUS;
 
 const prisma = new PrismaClient();
 
-const createNewApplication = async (req: Request, res: Response) => {
+const createNewApplication: RequestHandler = async (req, res, next) => {
   try {
     const { data } = req.body;
     const newApplication = await prisma.candidate.create({ data });
     return res.status(200).send({ newApplication });
   } catch (error: any) {
-    return res.status(400).send({ error });
+    next(error);
   }
 };
 
-const getAllApplications = async (req: Request, res: Response) => {
-  const { page = 1, limit = 10 } = req.query;
-  const applications = await getApplicationsWithParams(req.query);
-  const applicationsWithoutLimit = await getApplicationsWithParams(
-    req.query,
-    false
-  );
-  const response = {
-    page: +page,
-    limit: +limit,
-    data: applications,
-    total: applicationsWithoutLimit?.length,
-  };
-  return res.status(200).send(response);
+const getAllApplications: RequestHandler = async (req, res, next) => {
+  try {
+    const { page = 1, limit = 10 } = req.query;
+    const applications = await getApplicationsWithParams(req.query);
+    const applicationsWithoutLimit = await getApplicationsWithParams(
+      req.query,
+      false
+    );
+    const response = {
+      page: +page,
+      limit: +limit,
+      data: applications,
+      total: applicationsWithoutLimit?.length,
+    };
+    return res.status(200).send(response);
+  } catch (error) {
+    next(error);
+  }
 };
 
 const getApplicationsWithParams = (query: any, withLimit: boolean = true) => {
@@ -96,7 +100,7 @@ const getApplicationsWithParams = (query: any, withLimit: boolean = true) => {
   });
 };
 
-const updateApplication = async (req: Request, res: Response) => {
+const updateApplication: RequestHandler = async (req, res, next) => {
   try {
     const { data } = req.body;
     const { assessment, ...rest } = data || {};
@@ -182,11 +186,11 @@ const updateApplication = async (req: Request, res: Response) => {
 
     return res.status(200).send({ updatedApplication });
   } catch (error: any) {
-    return res.status(400).send(error.message);
+    next(error);
   }
 };
 
-const deleteApplication = async (req: Request, res: Response) => {
+const deleteApplication: RequestHandler = async (req, res, next) => {
   try {
     const { candidateId } = req.params;
 
@@ -197,7 +201,7 @@ const deleteApplication = async (req: Request, res: Response) => {
     });
     return res.status(200).send("OK");
   } catch (error: any) {
-    return res.status(400).send({ error });
+    next(error);
   }
 };
 

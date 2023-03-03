@@ -3,7 +3,7 @@ import { prisma } from "@config/prisma";
 import { NOTIFICATION_TOPIC_ITEMS } from "@constants/index";
 import { RequestHandler } from "express";
 
-const createNotificationTopic: RequestHandler = async (req, res) => {
+const createNotificationTopic: RequestHandler = async (req, res, next) => {
   try {
     const { topicKey, role } = req.body.data || {};
 
@@ -43,8 +43,7 @@ const createNotificationTopic: RequestHandler = async (req, res) => {
 
     return res.status(201).send(newNotificationTopic);
   } catch (err) {
-    console.log(err);
-    return res.sendStatus(400);
+    next(err);
   }
 };
 
@@ -54,7 +53,7 @@ const findTopicKeyIndex = (topicKey: string) => {
   );
 };
 
-const deleteNotificationTopic: RequestHandler = async (req, res) => {
+const deleteNotificationTopic: RequestHandler = async (req, res, next) => {
   try {
     const { topicKey } = req.body.data || {};
 
@@ -83,17 +82,25 @@ const deleteNotificationTopic: RequestHandler = async (req, res) => {
     await novuHelpers.removeSubscribersFromTopic(topicKey, subscribers);
     return res.sendStatus(200);
   } catch (err) {
-    return res.sendStatus(400);
+    next(err);
   }
 };
 
-const getNotificationTopicConfig: RequestHandler = (req, res) => {
-  return res.status(200).send(NOTIFICATION_TOPIC_ITEMS);
+const getNotificationTopicConfig: RequestHandler = (req, res, next) => {
+  try {
+    return res.status(200).send(NOTIFICATION_TOPIC_ITEMS);
+  } catch (err) {
+    next(err);
+  }
 };
 
-const getNotificationTopics: RequestHandler = async (req, res) => {
-  const notificationTopics = await prisma.notificationTopic.findMany();
-  return res.status(200).send(notificationTopics);
+const getNotificationTopics: RequestHandler = async (req, res, next) => {
+  try {
+    const notificationTopics = await prisma.notificationTopic.findMany();
+    return res.status(200).send(notificationTopics);
+  } catch (err) {
+    next(err);
+  }
 };
 
 export {

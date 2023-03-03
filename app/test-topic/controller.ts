@@ -1,9 +1,9 @@
-import { Request, Response } from "express";
+import { Request, RequestHandler, Response } from "express";
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-const createNewTestTopic = async (req: Request, res: Response) => {
+const createNewTestTopic: RequestHandler = async (req, res, next) => {
   try {
     const { data } = req.body;
     const newTestTopic = await prisma.testTopic.create({
@@ -12,11 +12,11 @@ const createNewTestTopic = async (req: Request, res: Response) => {
 
     return res.status(200).send({ newTestTopic });
   } catch (error: any) {
-    return res.sendStatus(400);
+    next(error);
   }
 };
 
-const updateTestTopic = async (req: Request, res: Response) => {
+const updateTestTopic: RequestHandler = async (req, res, next) => {
   try {
     const { data } = req.body;
     const { topicId } = req.params;
@@ -28,12 +28,11 @@ const updateTestTopic = async (req: Request, res: Response) => {
     });
     return res.status(200).send({ updatedTestTopic });
   } catch (error: any) {
-    console.log(error);
-    return res.sendStatus(400);
+    next(error);
   }
 };
 
-const deleteTestTopic = async (req: Request, res: Response) => {
+const deleteTestTopic: RequestHandler = async (req, res, next) => {
   try {
     const { topicId } = req.params;
     await prisma.testTopic.delete({
@@ -43,18 +42,17 @@ const deleteTestTopic = async (req: Request, res: Response) => {
     });
     return res.sendStatus(200);
   } catch (error: any) {
-    console.log(error);
-    return res.sendStatus(400);
+    next(error);
   }
 };
 
-const getAllTestTopics = async (req: Request, res: Response) => {
+const getAllTestTopics: RequestHandler = async (req, res, next) => {
   try {
     const allTestTopics = await prisma.testTopic.findMany();
 
     return res.status(200).send({ allTestTopics });
   } catch (error: any) {
-    return res.sendStatus(400);
+    next(error);
   }
 };
 

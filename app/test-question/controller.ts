@@ -1,11 +1,11 @@
-import { Request, Response } from "express";
+import { Request, RequestHandler, Response } from "express";
 import { Prisma, PrismaClient } from "@prisma/client";
 import { SORT_ORDER } from "@constants/common";
 import { isGetAllRecords } from "utils";
 
 const prisma = new PrismaClient();
 
-const createNewTestQuestion = async (req: Request, res: Response) => {
+const createNewTestQuestion: RequestHandler = async (req, res, next) => {
   try {
     const { data } = req.body;
     const { topicId, ...restData } = data;
@@ -19,12 +19,11 @@ const createNewTestQuestion = async (req: Request, res: Response) => {
 
     return res.status(200).send({ newTestQuestion });
   } catch (error: any) {
-    console.log(error);
-    return res.sendStatus(400);
+    next(error);
   }
 };
 
-const updateTestQuestion = async (req: Request, res: Response) => {
+const updateTestQuestion: RequestHandler = async (req, res, next) => {
   try {
     const { data } = req.body;
     const { questionId } = req.params;
@@ -37,12 +36,11 @@ const updateTestQuestion = async (req: Request, res: Response) => {
     });
     return res.status(200).send({ updatedTestQuestion });
   } catch (error: any) {
-    console.log(error);
-    return res.sendStatus(400);
+    next(error);
   }
 };
 
-const deleteTestQuestion = async (req: Request, res: Response) => {
+const deleteTestQuestion: RequestHandler = async (req, res, next) => {
   try {
     const { questionId } = req.params;
     await prisma.testQuestion.delete({
@@ -52,12 +50,11 @@ const deleteTestQuestion = async (req: Request, res: Response) => {
     });
     return res.sendStatus(200);
   } catch (error: any) {
-    console.log(error);
-    return res.sendStatus(400);
+    next(error);
   }
 };
 
-const getAllTestQuestions = async (req: Request, res: Response) => {
+const getAllTestQuestions: RequestHandler = async (req, res, next) => {
   const { page = 1, limit = 10 } = req.query;
   try {
     const testQuestions: any = await getQuestionsWithParams(req.query, true);
@@ -76,8 +73,7 @@ const getAllTestQuestions = async (req: Request, res: Response) => {
 
     return res.status(200).send(responseData);
   } catch (error: any) {
-    console.log(error);
-    return res.sendStatus(400);
+    next(error);
   }
 };
 
@@ -122,7 +118,7 @@ const getQuestionsWithParams = async (query: any, withLimit: boolean) => {
   `;
 };
 
-const getOneTestQuestion = async (req: Request, res: Response) => {
+const getOneTestQuestion: RequestHandler = async (req, res, next) => {
   try {
     const { questionId } = req.params;
 
@@ -137,11 +133,11 @@ const getOneTestQuestion = async (req: Request, res: Response) => {
 
     return res.status(200).send(testQuestion);
   } catch (error: any) {
-    return res.sendStatus(400);
+    next(error);
   }
 };
 
-const classifiedQuestion = async (req: Request, res: Response) => {
+const classifiedQuestion: RequestHandler = async (req, res, next) => {
   try {
     const allTestQuestions = await prisma.testQuestion.groupBy({
       by: ["topicId", "level"],
@@ -149,11 +145,9 @@ const classifiedQuestion = async (req: Request, res: Response) => {
         _all: true,
       },
     });
-    console.log(allTestQuestions);
     return res.status(200).send(allTestQuestions);
   } catch (error: any) {
-    console.log(error.message);
-    return res.sendStatus(400);
+    next(error);
   }
 };
 

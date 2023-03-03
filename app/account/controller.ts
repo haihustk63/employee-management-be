@@ -7,19 +7,23 @@ import { Request, RequestHandler, Response } from "express";
 
 const prisma = new PrismaClient();
 
-const getAllAccounts = async (req: Request, res: Response) => {
-  const { limit = 10, page = 1 } = req.query;
+const getAllAccounts: RequestHandler = async (req, res, next) => {
+  try {
+    const { limit = 10, page = 1 } = req.query;
 
-  const accounts = await getAccountsParams(req.query);
-  const accountsWithoutLimit = await getAccountsParams(req.query, false);
-  const response = {
-    data: accounts,
-    total: accountsWithoutLimit?.length,
-    limit: +limit,
-    page: +page,
-  };
+    const accounts = await getAccountsParams(req.query);
+    const accountsWithoutLimit = await getAccountsParams(req.query, false);
+    const response = {
+      data: accounts,
+      total: accountsWithoutLimit?.length,
+      limit: +limit,
+      page: +page,
+    };
 
-  return res.status(200).send(response);
+    return res.status(200).send(response);
+  } catch (err) {
+    next(err);
+  }
 };
 
 const getAccountsParams = (query: any, withLimit: boolean = true) => {
@@ -136,8 +140,7 @@ const createNewAccount: RequestHandler = async (req, res, next) => {
     });
     return res.status(200).send({ email });
   } catch (error) {
-    console.log(error);
-    return res.status(400).send({ error });
+    next(error);
   }
 };
 
@@ -151,7 +154,7 @@ const checkAccountExist = async (email: string) => {
   return !!account;
 };
 
-const updateAccount = async (req: Request, res: Response) => {
+const updateAccount: RequestHandler = async (req, res, next) => {
   try {
     const { data } = req.body;
     const { email, employeeId, candidateId } = data || {};
@@ -196,22 +199,22 @@ const updateAccount = async (req: Request, res: Response) => {
 
     return res.sendStatus(200);
   } catch (error) {
-    return res.status(400).send({ error });
+    next(error);
   }
 };
 
-const deleteAccount = async (req: Request, res: Response) => {
+const deleteAccount: RequestHandler = async (req, res, next) => {
   try {
     const { email = "" } = req.body.data;
+    if (!email) return res.sendStatus(400);
     await prisma.employeeAccount.delete({ where: { email } });
     return res.sendStatus(200);
   } catch (error) {
-    console.log(error);
-    return res.status(400).send({ error });
+    next(error);
   }
 };
 
-const changePassword = async (req: Request, res: Response) => {
+const changePassword: RequestHandler = async (req, res, next) => {
   try {
     const user = res.getHeader("user") as any;
     const email = user.email ?? user.employeeAccount?.email;
@@ -248,8 +251,7 @@ const changePassword = async (req: Request, res: Response) => {
 
     return res.sendStatus(200);
   } catch (error) {
-    console.log(error);
-    return res.status(400).send({ error });
+    next(error);
   }
 };
 

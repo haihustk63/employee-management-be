@@ -1,5 +1,5 @@
 import dayjs from "dayjs";
-import { Request, Response } from "express";
+import { Request, RequestHandler, Response } from "express";
 import { PrismaClient } from "@prisma/client";
 
 import {
@@ -35,7 +35,7 @@ const TARGET_TIME = {
 
 const prisma = new PrismaClient();
 
-const checkInOut = async (req: Request, res: Response) => {
+const checkInOut: RequestHandler = async (req, res, next) => {
   try {
     const { type } = req.body.data;
     const { id: employeeId } = res.getHeader("user") as any;
@@ -55,11 +55,11 @@ const checkInOut = async (req: Request, res: Response) => {
 
     return res.status(200).send(checkInReq);
   } catch (error: any) {
-    return res.status(400).send(error.message);
+    next(error);
   }
 };
 
-const getCheckInOutInfo = async (req: Request, res: Response) => {
+const getCheckInOutInfo: RequestHandler = async (req, res, next) => {
   try {
     const { employeeId } = res.getHeader("user") as any;
 
@@ -73,7 +73,7 @@ const getCheckInOutInfo = async (req: Request, res: Response) => {
 
     return res.status(200).send(isChecked);
   } catch (error: any) {
-    return res.status(400).send(error.message);
+    next(error);
   }
 };
 
@@ -95,7 +95,7 @@ const getChecked = async (type: string, employeeId: number) => {
   };
 };
 
-const getCheckInOutList = async (req: Request, res: Response) => {
+const getCheckInOutList: RequestHandler = async (req, res, next) => {
   try {
     const today = new Date().toDateString();
 
@@ -143,11 +143,11 @@ const getCheckInOutList = async (req: Request, res: Response) => {
 
     return res.status(STATUS_CODE.SUCCESS).send({ data: resData });
   } catch (error) {
-    console.log(error);
+    next(error);
   }
 };
 
-const getCheckInOutTimesheet = async (req: Request, res: Response) => {
+const getCheckInOutTimesheet: RequestHandler = async (req, res, next) => {
   try {
     const { id: employeeId } = res.getHeader("user") as any;
     const currentDate = new Date();
@@ -180,7 +180,7 @@ const getCheckInOutTimesheet = async (req: Request, res: Response) => {
 
     return res.status(STATUS_CODE.SUCCESS).send({ data: lastResult, total });
   } catch (error) {
-    console.log(error);
+    next(error);
   }
 };
 

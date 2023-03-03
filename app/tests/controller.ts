@@ -10,7 +10,7 @@ const { essays, multipleChoice, oneChoice } = QUESTION_TYPES;
 
 const prisma = new PrismaClient();
 
-const createTestRandom = async (req: Request, res: Response) => {
+const createTestRandom: RequestHandler = async (req, res, next) => {
   try {
     const { data: infoQuestion } = req.body;
 
@@ -41,12 +41,11 @@ const createTestRandom = async (req: Request, res: Response) => {
 
     return res.status(200).send(test);
   } catch (error: any) {
-    console.log(error);
-    return res.sendStatus(400);
+    next(error);
   }
 };
 
-const createTest = async (req: Request, res: Response) => {
+const createTest: RequestHandler = async (req, res, next) => {
   try {
     const { data: questionIds } = req.body;
 
@@ -60,11 +59,11 @@ const createTest = async (req: Request, res: Response) => {
 
     return res.status(200).send(test);
   } catch (error: any) {
-    return res.sendStatus(400);
+    next(error);
   }
 };
 
-const saveTest = async (req: Request, res: Response) => {
+const saveTest: RequestHandler = async (req, res, next) => {
   try {
     const { data } = req.body;
     const { questionIds, title, duration } = data;
@@ -88,11 +87,11 @@ const saveTest = async (req: Request, res: Response) => {
 
     return res.status(201).send(newTest);
   } catch (error: any) {
-    return res.sendStatus(400);
+    next(error);
   }
 };
 
-const updateTest = async (req: Request, res: Response) => {
+const updateTest: RequestHandler = async (req, res, next) => {
   try {
     const { data } = req.body;
     const { testId: id } = req.params;
@@ -146,12 +145,11 @@ const updateTest = async (req: Request, res: Response) => {
 
     return res.sendStatus(200);
   } catch (error: any) {
-    console.log(error.message);
-    return res.sendStatus(400);
+    next(error);
   }
 };
 
-const deleteTest = async (req: Request, res: Response) => {
+const deleteTest: RequestHandler = async (req, res, next) => {
   try {
     const { testId } = req.params;
 
@@ -163,11 +161,11 @@ const deleteTest = async (req: Request, res: Response) => {
 
     return res.sendStatus(200);
   } catch (error: any) {
-    return res.sendStatus(400);
+    next(error);
   }
 };
 
-const getTest = async (req: Request, res: Response) => {
+const getTest: RequestHandler = async (req, res, next) => {
   try {
     const { testId } = req.params;
     const test = await prisma.skillTest.findUnique({
@@ -199,11 +197,11 @@ const getTest = async (req: Request, res: Response) => {
 
     return res.status(200).send({ test });
   } catch (error: any) {
-    return res.sendStatus(400);
+    next(error);
   }
 };
 
-const getAllTests = async (req: Request, res: Response) => {
+const getAllTests: RequestHandler = async (req, res, next) => {
   try {
     const tests = await prisma.skillTest.findMany({
       include: {
@@ -217,11 +215,11 @@ const getAllTests = async (req: Request, res: Response) => {
     });
     return res.status(200).send({ tests });
   } catch (error) {
-    return res.sendStatus(400);
+    next(error);
   }
 };
 
-const getContestantTests = async (req: Request, res: Response) => {
+const getContestantTests: RequestHandler = async (req, res, next) => {
   try {
     const email = res.getHeader("email") as any;
     const tests = await prisma.skillTestAccount.findMany({
@@ -235,11 +233,11 @@ const getContestantTests = async (req: Request, res: Response) => {
     });
     return res.status(200).send({ tests });
   } catch (error) {
-    return res.sendStatus(400);
+    next(error);
   }
 };
 
-const getContestantTest = async (req: Request, res: Response) => {
+const getContestantTest: RequestHandler = async (req, res, next) => {
   try {
     const { testId: id } = req.params;
     const email = res.getHeader("email") as any;
@@ -288,7 +286,7 @@ const getContestantTest = async (req: Request, res: Response) => {
 
     return res.status(200).send(test);
   } catch (error) {
-    return res.sendStatus(400);
+    next(error);
   }
 };
 
@@ -361,53 +359,57 @@ const getContestantTestQuery = ({ testId, includeAnswer }: any) => {
 };
 
 const assignContestantTest: RequestHandler = async (req, res, next) => {
-  const { email, testId } = req.body.data || {};
+  try {
+    const { email, testId } = req.body.data || {};
 
-  if (!email || !testId) {
-    return res.sendStatus(400);
-  }
+    if (!email || !testId) {
+      return res.sendStatus(400);
+    }
 
-  const currentTest = await prisma.skillTestAccount.findUnique({
-    where: {
-      email_testId: {
-        testId,
-        email,
-      },
-    },
-  });
-
-  if (!currentTest || currentTest?.status === created.value) {
-    await prisma.skillTestAccount.deleteMany({
+    const currentTest = await prisma.skillTestAccount.findUnique({
       where: {
-        email,
-        status: created.value,
+        email_testId: {
+          testId,
+          email,
+        },
       },
     });
 
-    await prisma.skillTestAccount.create({
-      data: {
-        testId,
-        email,
-      },
-    });
+    if (!currentTest || currentTest?.status === created.value) {
+      await prisma.skillTestAccount.deleteMany({
+        where: {
+          email,
+          status: created.value,
+        },
+      });
 
-    return res.sendStatus(201);
-  }
+      await prisma.skillTestAccount.create({
+        data: {
+          testId,
+          email,
+        },
+      });
 
-  if (currentTest?.status === attempting.value) {
-    return res
-      .status(400)
-      .send({ message: "The candidate is currently attempting" });
-  }
+      return res.sendStatus(201);
+    }
 
-  if (currentTest?.status === done.value) {
-    return res
-      .status(400)
-      .send({ message: "The candidate has done this test" });
+    if (currentTest?.status === attempting.value) {
+      return res
+        .status(400)
+        .send({ message: "The candidate is currently attempting" });
+    }
+
+    if (currentTest?.status === done.value) {
+      return res
+        .status(400)
+        .send({ message: "The candidate has done this test" });
+    }
+  } catch (error) {
+    next(error);
   }
 };
 
-const updateContestantTest = async (req: Request, res: Response) => {
+const updateContestantTest: RequestHandler = async (req, res, next) => {
   try {
     const { confirmAttempt } = req.body.data || {};
     const { testId: id } = req.params;
@@ -451,7 +453,7 @@ const updateContestantTest = async (req: Request, res: Response) => {
     }
     return res.sendStatus(200);
   } catch (error) {
-    return res.sendStatus(400);
+    next(error);
   }
 };
 
@@ -475,7 +477,7 @@ const updateTestStatusJob = async (testId: number) => {
   }
 };
 
-const submitTest = async (req: Request, res: Response) => {
+const submitTest: RequestHandler = async (req, res, next) => {
   try {
     const { testId, answers } = req.body.data;
     let score = 0;
@@ -582,8 +584,7 @@ const submitTest = async (req: Request, res: Response) => {
     });
     return res.status(200).send("OK");
   } catch (error: any) {
-    console.log(error);
-    return res.sendStatus(400);
+    next(error);
   }
 };
 
