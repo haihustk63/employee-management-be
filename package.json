@@ -5,7 +5,7 @@
   "main": "index.ts",
   "scripts": {
     "dev": "nodemon -e ts,js --exec ts-node -r tsconfig-paths/register index.ts",
-    "build": "npx tsc --project tsconfig.json && npx tsc-alias -p tsconfig.json",
+    "build": "npm install && npx tsc --project tsconfig.json && npx tsc-alias -p tsconfig.json",
     "start": "node ./dist/index.js",
     "seed": "ts-node prisma/seed/seed.ts",
     "db:push": "prisma db push"
