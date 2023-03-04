@@ -32,6 +32,7 @@ const corsOption = {
     "http://127.0.0.1:5173",
     "http://127.0.0.1:3000",
     "http://localhost:3000",
+    "https://employee-management-l26ph0pxg-haihustk63.vercel.app",
   ],
   credentials: true,
 };

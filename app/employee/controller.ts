@@ -285,7 +285,7 @@ const updateEmployeeProfile: RequestHandler = async (req, res, next) => {
         } else {
           await trx.employeeAccount.update({
             where: {
-              email: updatedEmployeeProfile.employeeAccount?.email,
+              email,
             },
             data: {
               employeeId: null,

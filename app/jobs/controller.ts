@@ -47,7 +47,7 @@ const getJobsWithParams = (query: any, withLimit: boolean = true) => {
       ${typeOfJob ? Prisma.sql`AND type_of_job=${typeOfJob}` : Prisma.empty}
       ${level ? Prisma.sql`AND level=${level}` : Prisma.empty}
       ${position ? Prisma.sql`AND position_id=${position}` : Prisma.empty}
-      ${limit && withLimit ? Prisma.sql`LIMIT ${page}` : Prisma.empty}
+      ${limit && withLimit ? Prisma.sql`LIMIT ${limit}` : Prisma.empty}
       ${
         page && withLimit
           ? Prisma.sql`OFFSET ${(+page - 1) * +limit}`

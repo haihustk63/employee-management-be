@@ -10,3 +10,7 @@ export const isGetAllRecords = (
     (key: string) => !fieldAffected.includes(key)
   );
 };
+
+export const roundHalf = (num: number) => {
+  return (Math.round(num * 2) / 2).toFixed(1);
+};

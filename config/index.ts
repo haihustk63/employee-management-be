@@ -16,3 +16,6 @@ export const cloudinarySecret = process.env.CLOUDINARY_SECRET || "";
 
 //
 export const novuApiKey = process.env.NOVU_API_KEY || "";
+
+//
+export const webDomain = process.env.WEB_DOMAIN || "";

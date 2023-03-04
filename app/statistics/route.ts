@@ -6,6 +6,7 @@ import {
   getEducationProgramStatistics,
   getJobStatistics,
   getRequestStatistics,
+  getTops,
 } from "./controller";
 import { authMiddleware } from "@middleware/index";
 
@@ -15,6 +16,7 @@ const {
   CANDIDATE_STATISTICS,
   APPLICATION_STATISTICS,
   EDUCATION_PROGRAM_STATISTICS,
+  TOPS,
 } = ROUTES;
 
 const router = Router();
@@ -28,5 +30,6 @@ router.get(
   authMiddleware,
   getEducationProgramStatistics
 );
+router.get(TOPS, authMiddleware, getTops);
 
 export default router;

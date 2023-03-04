@@ -45,6 +45,7 @@ export const BASE_URLS = {
 
   // statistics
   STATISTICS: "/statistics",
+  TOPS: "/tops",
 
   // firebase
   FIREBASE_ACCOUNT: "/firebase-account",
@@ -120,6 +121,7 @@ export const ROUTES = {
   REQUEST_STATISTICS: `${BASE_URLS.STATISTICS}/requests`,
   JOB_STATISTICS: `${BASE_URLS.STATISTICS}/job`,
   EDUCATION_PROGRAM_STATISTICS: `${BASE_URLS.STATISTICS}/education-programs`,
+  TOPS: BASE_URLS.TOPS,
 
   // firebase
   FIREBASE_ACCOUNT: BASE_URLS.FIREBASE_ACCOUNT,

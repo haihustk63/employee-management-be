@@ -227,7 +227,7 @@ const calculateAverageRate = (employees: any[]) => {
     }
   });
 
-  return !totalTurns ? 5 : totalStars / totalTurns;
+  return !totalTurns ? 5 : Math.round(totalStars / totalTurns);
 };
 
 const getEducationProgramById: RequestHandler = async (req, res, next) => {
