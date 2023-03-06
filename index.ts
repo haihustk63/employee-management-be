@@ -21,19 +21,13 @@ import {
   notificationTopicRouter,
 } from "@app/index";
 import { errorHandler } from "@middleware/error-handler";
-import { appPort } from "@config/index";
+import { appPort, webHost } from "@config/index";
 
 const app: Express = express();
 
 const corsOption = {
   optionsSuccessStatus: 200,
-  origin: [
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-    "http://127.0.0.1:3000",
-    "http://localhost:3000",
-    "https://employee-management-l26ph0pxg-haihustk63.vercel.app",
-  ],
+  origin: webHost,
   credentials: true,
 };
 

@@ -25,7 +25,7 @@ router.get(EMPLOYEE_PROFILE_MODIFY, authMiddleware, getOneEmployeeProfile);
 // create a new employee profile
 router.post(
   EMPLOYEE_PROFILE,
-  authMiddleware,
+  // authMiddleware,
   upload.single("avatar"),
   createNewEmployeeProfile
 );
