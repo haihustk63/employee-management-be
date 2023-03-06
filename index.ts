@@ -21,13 +21,13 @@ import {
   notificationTopicRouter,
 } from "@app/index";
 import { errorHandler } from "@middleware/error-handler";
-import { appPort, webHost } from "@config/index";
+import { appPort, webReactHost, webNextHost } from "@config/index";
 
 const app: Express = express();
 
 const corsOption = {
   optionsSuccessStatus: 200,
-  origin: webHost,
+  origin: [webReactHost, webNextHost],
   credentials: true,
 };
 

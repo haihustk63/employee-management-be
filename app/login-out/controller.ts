@@ -5,7 +5,7 @@ import jwt from "jsonwebtoken";
 import { serialize } from "cookie";
 
 import { STATUS_CODE } from "@constants/common";
-import { webDomain } from "@config/index";
+import { environment, webDomain } from "@config/index";
 
 const prisma = new PrismaClient();
 
@@ -107,22 +107,28 @@ export const createToken = (data: any) => {
 };
 
 export const createSerialized = (token: string) => {
+  const sameSite = environment === "development" ? "strict" : "none";
+  const secure = environment === "development" ? undefined : true;
   return serialize("token", token, {
     httpOnly: true,
     maxAge: 60 * 60 * 24,
     domain: webDomain,
     path: "/",
-    sameSite: "strict",
+    sameSite,
+    secure,
   });
 };
 
 export const createDeactiveToken = () => {
+  const sameSite = environment === "development" ? "strict" : "none";
+  const secure = environment === "development" ? undefined : true;
   return serialize("token", "", {
     httpOnly: true,
     maxAge: -1,
     domain: webDomain,
     path: "/",
-    sameSite: "strict",
+    sameSite,
+    secure,
   });
 };
 

@@ -19,4 +19,8 @@ export const novuApiKey = process.env.NOVU_API_KEY || "";
 
 //
 export const webDomain = process.env.WEB_DOMAIN || "";
-export const webHost = process.env.WEB_HOST || "";
+export const webReactHost = process.env.WEB_REACT_HOST || "";
+export const webNextHost = process.env.WEB_NEXT_HOST || "";
+
+//
+export const environment = process.env.ENVIRONMENT || "";
