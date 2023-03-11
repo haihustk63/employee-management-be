@@ -71,7 +71,16 @@ export const getAccountWithEmail = (
       },
       candidate: {
         select: {
-          job: true,
+          job: {
+            select: {
+              id: true,
+              title: true,
+              typeOfJob: true,
+              upTo: true,
+              level: true,
+              positionId: true,
+            },
+          },
           interviewer: {
             select: {
               firstName: true,

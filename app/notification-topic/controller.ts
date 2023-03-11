@@ -1,11 +1,12 @@
 import { novuHelpers } from "@config/novu";
 import { prisma } from "@config/prisma";
+import { ROLES } from "@constants/common";
 import { NOTIFICATION_TOPIC_ITEMS } from "@constants/index";
 import { RequestHandler } from "express";
 
 const createNotificationTopic: RequestHandler = async (req, res, next) => {
   try {
-    const { topicKey, role } = req.body.data || {};
+    const { topicKey, role = [ROLES.SUPER_ADMIN.value] } = req.body.data || {};
 
     const topicKeyIndex = findTopicKeyIndex(topicKey);
     if (topicKeyIndex < 0) return res.sendStatus(400);
@@ -21,7 +22,9 @@ const createNotificationTopic: RequestHandler = async (req, res, next) => {
     const subscribers: string[] = await prisma.employee
       .findMany({
         where: {
-          role,
+          role: {
+            in: role,
+          },
         },
       })
       ?.then((employees) =>
@@ -53,6 +56,73 @@ const findTopicKeyIndex = (topicKey: string) => {
   );
 };
 
+const updateNotificationTopic: RequestHandler = async (req, res, next) => {
+  try {
+    const { topicKey, role: newRole } = req.body.data || {};
+
+    const topicKeyIndex = findTopicKeyIndex(topicKey);
+    if (topicKeyIndex < 0) return res.sendStatus(400);
+
+    prisma.$transaction(async (transaction) => {
+      const currentTopic = await transaction.notificationTopic.findUnique({
+        where: {
+          topicKey,
+        },
+      });
+
+      await transaction.notificationTopic.update({
+        where: {
+          topicKey,
+        },
+        data: {
+          role: newRole,
+        },
+      });
+
+      const oldSubscribers = await transaction.employee
+        .findMany({
+          where: {
+            role: {
+              in: currentTopic?.role as number[],
+            },
+          },
+        })
+        ?.then((employees) =>
+          employees.map((employee) => employee.id.toString())
+        );
+
+      const currentSubscribers = await transaction.employee
+        .findMany({
+          where: {
+            role: {
+              in: newRole as number[],
+            },
+          },
+        })
+        ?.then((employees) =>
+          employees.map((employee) => employee.id.toString())
+        );
+
+      const deletedSubscribers = oldSubscribers.filter(
+        (id) => !currentSubscribers.includes(id)
+      );
+
+      const newSubscribers = currentSubscribers.filter(
+        (id) => !oldSubscribers.includes(id)
+      );
+
+      await novuHelpers.removeSubscribersFromTopic(
+        topicKey,
+        deletedSubscribers
+      );
+      await novuHelpers.addSubscribersToTopic(topicKey, newSubscribers);
+      return res.sendStatus(200);
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
 const deleteNotificationTopic: RequestHandler = async (req, res, next) => {
   try {
     const { topicKey } = req.body.data || {};
@@ -72,7 +142,9 @@ const deleteNotificationTopic: RequestHandler = async (req, res, next) => {
     const subscribers: string[] = await prisma.employee
       .findMany({
         where: {
-          role: deletedTopic.role,
+          role: {
+            in: deletedTopic.role as number[],
+          },
         },
       })
       ?.then((employees) =>
@@ -108,4 +180,5 @@ export {
   getNotificationTopicConfig,
   getNotificationTopics,
   deleteNotificationTopic,
+  updateNotificationTopic,
 };

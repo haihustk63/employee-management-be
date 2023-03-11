@@ -151,7 +151,6 @@ const statisticsByQuarter = (data: any[], year: number) => {
     if (itemYear === year) {
       const itemMonth = dayjs(createdAt).month();
       const quarter = getQuarter(itemMonth);
-      console.log(quarter);
       infoMap.set(quarter, [...(infoMap.get(quarter) || []), item]);
     }
   });

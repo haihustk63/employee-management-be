@@ -3,6 +3,7 @@ import { Request, RequestHandler, Response } from "express";
 import { sendEmail } from "@config/mailtrap";
 import { ROLES, TEST_STATUS, QUESTION_TYPES } from "@constants/common";
 import { generateSubmitTestEmail } from "@config/mail-template/submit-test";
+import { assignTestEmail } from "@config/mail-template/assign-test";
 
 const { CANDIDATE, EMPLOYEE, DIVISION_MANAGER, ADMIN, SUPER_ADMIN } = ROLES;
 const { created, attempting, done } = TEST_STATUS;
@@ -94,14 +95,12 @@ const saveTest: RequestHandler = async (req, res, next) => {
 const updateTest: RequestHandler = async (req, res, next) => {
   try {
     const { data } = req.body;
-    const { testId: id } = req.params;
+    const { testId } = req.params;
     const { questionIds, title, duration } = data;
-
-    const testId = Number(id);
 
     const questions = await prisma.testQuestionSkillTest.findMany({
       where: {
-        testId: testId,
+        testId: +testId,
       },
     });
 
@@ -133,7 +132,7 @@ const updateTest: RequestHandler = async (req, res, next) => {
 
     const updateTestInfo = prisma.skillTest.update({
       where: {
-        id: testId,
+        id: +testId,
       },
       data: {
         title,
@@ -202,21 +201,51 @@ const getTest: RequestHandler = async (req, res, next) => {
 };
 
 const getAllTests: RequestHandler = async (req, res, next) => {
+  const { limit = 10, page = 1 } = req.query;
   try {
-    const tests = await prisma.skillTest.findMany({
-      include: {
-        testQuestionSkillTest: {
-          include: {
-            question: true,
-          },
-        },
-        skillTestAccount: true,
-      },
+    const allTestsWithLimit = await getAllTestsWithParams(req.query);
+    const allTestsWithoutLimit = await getAllTestsWithParams(req.query, false);
+    return res.status(200).send({
+      page: +page,
+      limit: +limit,
+      total: allTestsWithoutLimit.length,
+      data: allTestsWithLimit,
     });
-    return res.status(200).send({ tests });
   } catch (error) {
     next(error);
   }
+};
+
+const getAllTestsWithParams = (query: any, withLimit = true) => {
+  const { page = 1, limit = 10, keyword } = query;
+  const whereExtraQuery: any = {};
+  const extraParams: any = {};
+  if (keyword) {
+    whereExtraQuery.title = {
+      contains: keyword,
+    };
+  }
+
+  if (withLimit) {
+    extraParams.take = +limit;
+    extraParams.skip = +limit * (+page - 1);
+  }
+
+  return prisma.skillTest.findMany({
+    where: { ...whereExtraQuery },
+    include: {
+      testQuestionSkillTest: {
+        include: {
+          question: true,
+        },
+      },
+      skillTestAccount: true,
+    },
+    ...extraParams,
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
 };
 
 const getContestantTests: RequestHandler = async (req, res, next) => {
@@ -383,11 +412,39 @@ const assignContestantTest: RequestHandler = async (req, res, next) => {
         },
       });
 
-      await prisma.skillTestAccount.create({
+      const testSession = await prisma.skillTestAccount.create({
         data: {
           testId,
           email,
         },
+        select: {
+          account: {
+            select: {
+              candidate: {
+                select: {
+                  name: true,
+                  email: true,
+                },
+              },
+            },
+          },
+          test: {
+            select: {
+              title: true,
+              duration: true,
+            },
+          },
+        },
+      });
+
+      await sendEmail({
+        to: testSession.account.candidate?.email,
+        subject: "Assign skill test for candidate",
+        html: assignTestEmail({
+          candidateName: testSession.account.candidate?.name,
+          testTitle: testSession.test.title,
+          duration: testSession.test.duration,
+        }),
       });
 
       return res.sendStatus(201);

@@ -226,6 +226,7 @@ model SkillTest {
   duration              Int                     @default(0)
   skillTestAccount      SkillTestAccount[]
   testQuestionSkillTest TestQuestionSkillTest[]
+  createdAt             DateTime                @default(now())
 
   @@map("skill_test")
 }
@@ -285,7 +286,7 @@ model NotificationTopic {
   id        Int    @id @default(autoincrement())
   topicName String @map("topic_name")
   topicKey  String @unique @map("topic_key")
-  role      Int    @default(1)
+  role      Json
 
   @@map("notification_topic")
 }

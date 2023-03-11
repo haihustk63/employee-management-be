@@ -16,7 +16,7 @@ const router = Router();
 //get test
 router.get(JOBS, getAllJobs);
 router.post(JOBS, authMiddleware, createJob);
-router.get(JOBS_MODIFY, authMiddleware, getJobById);
+router.get(JOBS_MODIFY, getJobById);
 router.patch(JOBS_MODIFY, authMiddleware, updateJob);
 router.delete(JOBS_MODIFY, authMiddleware, deleteJob);
 

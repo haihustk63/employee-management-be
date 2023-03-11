@@ -7,8 +7,8 @@ import {
 } from ".";
 
 export interface IEmail {
-  to: string;
-  subject: string;
+  to?: string;
+  subject?: string;
   text?: string;
   [key: string]: string | undefined;
 }
@@ -23,6 +23,9 @@ const transport = nodeMailer.createTransport({
 });
 
 export const sendEmail = async ({ to, subject, text, html }: IEmail) => {
+  if (!to || !subject || (!text && !html)) {
+    return;
+  }
   try {
     const res = await transport.sendMail({
       from: "myhrm_admin@gmail.com",

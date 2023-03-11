@@ -5,6 +5,8 @@ import { Request, RequestHandler, Response } from "express";
 import { ASSESSMENT, TEST_STATUS } from "@constants/common";
 import { generateFailInterviewEmail } from "@config/mail-template/fail-interview";
 import { generatePassInterviewEmail } from "@config/mail-template/pass-interview";
+import { novuHelpers } from "@config/novu";
+import { NOVU_TOPIC_KEY } from "@constants/index";
 
 const { considering, failed, good, notGood, passed } = ASSESSMENT;
 const { attempting, created, done } = TEST_STATUS;
@@ -15,6 +17,13 @@ const createNewApplication: RequestHandler = async (req, res, next) => {
   try {
     const { data } = req.body;
     const newApplication = await prisma.candidate.create({ data });
+    await novuHelpers.triggerToTopic({
+      eventId: "new-application",
+      payload: {
+        path: "/candidates",
+      },
+      topicKey: NOVU_TOPIC_KEY.newApplication,
+    });
     return res.status(200).send({ newApplication });
   } catch (error: any) {
     next(error);
@@ -97,6 +106,9 @@ const getApplicationsWithParams = (query: any, withLimit: boolean = true) => {
       },
     },
     ...pageParams,
+    orderBy: {
+      createdAt: "desc",
+    },
   });
 };
 

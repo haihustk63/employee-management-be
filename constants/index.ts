@@ -195,6 +195,7 @@ export const NOT_NEED_AUTH_PATH = [
 
 export const NOVU_TOPIC_KEY = {
   completeSkillTest: "complete-skill-test",
+  newApplication: "new-application",
 };
 
 export const NOTIFICATION_TOPIC_ITEMS = [
@@ -202,5 +203,10 @@ export const NOTIFICATION_TOPIC_ITEMS = [
     key: 1,
     topicKey: NOVU_TOPIC_KEY.completeSkillTest,
     label: "Notify when a skill test is completed",
+  },
+  {
+    key: 2,
+    topicKey: NOVU_TOPIC_KEY.newApplication,
+    label: "Notify when a new application is created",
   },
 ];
