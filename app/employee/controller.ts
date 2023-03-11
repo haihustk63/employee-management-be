@@ -245,8 +245,7 @@ const updateEmployeeProfile: RequestHandler = async (req, res, next) => {
 
     if (profileData.role) {
       if (
-        profileData.role === ROLES.SUPER_ADMIN.value ||
-        (profileData.role === ROLES.ADMIN.value &&
+        (roleAdmin.includes(profileData.role) &&
           role !== ROLES.SUPER_ADMIN.value) ||
         (!roleAdmin.includes(profileData.role) && !roleAdmin.includes(role))
       ) {
