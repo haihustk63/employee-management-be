@@ -83,7 +83,7 @@ const updateNotificationTopic: RequestHandler = async (req, res, next) => {
         .findMany({
           where: {
             role: {
-              in: currentTopic?.role as number[],
+              in: currentTopic?.role as any,
             },
           },
         })
@@ -95,7 +95,7 @@ const updateNotificationTopic: RequestHandler = async (req, res, next) => {
         .findMany({
           where: {
             role: {
-              in: newRole as number[],
+              in: newRole as any,
             },
           },
         })
@@ -143,7 +143,7 @@ const deleteNotificationTopic: RequestHandler = async (req, res, next) => {
       .findMany({
         where: {
           role: {
-            in: deletedTopic.role as number[],
+            in: deletedTopic.role as any,
           },
         },
       })
