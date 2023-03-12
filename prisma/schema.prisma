@@ -14,7 +14,7 @@ datasource db {
 
 model Position {
   id          Int        @id @default(autoincrement())
-  name        String     @db.VarChar(20)
+  name        String     @db.VarChar(100)
   description String?    @db.LongText
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @default(now()) @updatedAt
@@ -78,7 +78,7 @@ model Candidate {
   phone           String?          @db.VarChar(10)
   email           String           @db.VarChar(30)
   appointmentTime DateTime?        @map("appointment_time")
-  cvLink          String           @map("cv_link")
+  cvLink          String           @map("cv_link") @db.MediumText()
   interviewerId   Int?             @map("interviewer_id")
   interviewer     Employee?        @relation(fields: [interviewerId], references: [id], onDelete: SetNull)
   assessment      Int?             @default(2)

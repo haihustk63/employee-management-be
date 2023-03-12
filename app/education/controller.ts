@@ -45,7 +45,7 @@ const createEducationProgram: RequestHandler = async (req, res, next) => {
     }
 
     novuHelpers.broadCastNotification("education-program", {
-      ...newProgram,
+      program: newProgram,
       path: "/education-programs/list",
     });
 

@@ -21,6 +21,7 @@ const createNewApplication: RequestHandler = async (req, res, next) => {
       eventId: "new-application",
       payload: {
         path: "/candidates",
+        application: newApplication,
       },
       topicKey: NOVU_TOPIC_KEY.newApplication,
     });

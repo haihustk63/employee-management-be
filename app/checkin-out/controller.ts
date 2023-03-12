@@ -1,12 +1,10 @@
-import dayjs from "dayjs";
-import { Request, RequestHandler, Response } from "express";
 import { PrismaClient } from "@prisma/client";
+import dayjs from "dayjs";
+import { RequestHandler } from "express";
 
 import {
-  STATUS_CODE,
-  WORKING_TIME,
-  REQUEST_TYPES,
-  REQUEST_STATUS,
+  REQUEST_STATUS, REQUEST_TYPES, STATUS_CODE,
+  WORKING_TIME
 } from "@constants/common";
 
 const {
@@ -50,6 +48,7 @@ const checkInOut: RequestHandler = async (req, res, next) => {
       data: {
         employeeId: Number(employeeId),
         type: Number(type),
+        time: dayjs().toDate(),
       },
     });
 
