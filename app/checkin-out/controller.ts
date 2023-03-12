@@ -61,7 +61,7 @@ const checkInOut: RequestHandler = async (req, res, next) => {
 
 const getCheckInOutInfo: RequestHandler = async (req, res, next) => {
   try {
-    const { employeeId } = res.getHeader("user") as any;
+    const { id: employeeId } = res.getHeader("user") as any;
 
     const { type } = req.query;
 

@@ -87,6 +87,7 @@ const getAccountsParams = (query: any, withLimit: boolean = true) => {
       candidate: {
         select: {
           name: true,
+          assessment: true,
         },
       },
       candidateId: true,

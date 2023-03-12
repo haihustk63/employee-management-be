@@ -152,7 +152,7 @@ const createNewEmployeeProfile: RequestHandler = async (req, res, next) => {
         folder: UPCLOUD_FOLDERS.avatars,
       });
 
-      profileData = { ...profileData, avatar: avatarUrl };
+      profileData = { ...profileData, avatar: avatarUrl.url };
     }
 
     const newEmployeeProfile = await prisma.employee.create({

@@ -74,6 +74,13 @@ const getApplicationsWithParams = (query: any, withLimit: boolean = true) => {
           contains: keyword,
         },
       },
+      {
+        employeeAccount: {
+          email: {
+            contains: keyword,
+          },
+        },
+      },
     ];
   }
 
